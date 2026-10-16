@@ -1,4 +1,13 @@
-import type { LatLng, PlanRequest, PlanResponse, Place, Rules, RouteSegment } from "./types";
+import type {
+  HeatmapRequest,
+  HeatmapResponse,
+  LatLng,
+  PlanRequest,
+  PlanResponse,
+  Place,
+  Rules,
+  RouteSegment,
+} from "./types";
 
 export class ApiError extends Error {}
 
@@ -67,9 +76,18 @@ export const api = {
     return results;
   },
 
+  // The heatmap needs ~130 more forecast locations than the routes, so it's
+  // left out here and loaded with api.heatmap once the routes are on screen.
   plan: async (body: PlanRequest, signal?: AbortSignal) => {
-    const plan = await request<PlanResponse>("plan", { method: "POST", body: JSON.stringify(body), signal });
+    const plan = await request<PlanResponse>("plan", {
+      method: "POST",
+      body: JSON.stringify({ ...body, include_heatmap: false }),
+      signal,
+    });
     for (const route of plan.routes) route.geometry = joinSegments(route.segments);
     return plan;
   },
+
+  heatmap: (body: HeatmapRequest, signal?: AbortSignal) =>
+    request<HeatmapResponse>("heatmap", { method: "POST", body: JSON.stringify(body), signal }),
 };

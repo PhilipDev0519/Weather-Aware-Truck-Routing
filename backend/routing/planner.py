@@ -25,6 +25,7 @@ LEVEL_KEYS = {
 }
 SIMPLIFY_DEG = 0.0005  # ~50 m, plenty for drawing on the map
 CORRIDOR_SIMPLIFY_DEG = 0.01  # the heatmap grid only needs the rough shape
+HEATMAP_FAILED = "The weather heatmap could not be built for this trip."
 
 
 @dataclass
@@ -81,17 +82,25 @@ def plan_trip(
     load_lbs: float,
     interval_miles: int,
     rest_breaks: bool = True,
+    include_heatmap: bool = True,
 ) -> dict:
+    """Routes, checkpoints, risk and the recommendation for one trip.
+
+    Without include_heatmap the heatmap is left out and the client fetches it
+    from /api/heatmap with the returned corridor, so the routes come back
+    without waiting for ~130 more forecast locations.
+    """
     options = route_options((origin["lat"], origin["lon"]), (destination["lat"], destination["lon"]), load_lbs)
     routes, warnings = options.routes, list(options.warnings)
     checkpoints = [build_checkpoints(r, departure, interval_miles, rest_breaks) for r in routes]
 
+    # Simplify each route once; the coloured stretches are cut from this line too.
+    display = [_display_line(r) for r in routes]
+    corridor = [simplify(coords, CORRIDOR_SIMPLIFY_DEG) for coords, _ in display]
+
     # The heatmap and the checkpoint weather are independent, so fetch them side by side.
     with ThreadPoolExecutor(max_workers=1) as pool:
-        # Simplify each route once; the coloured stretches are cut from this line too.
-        display = [_display_line(r) for r in routes]
-        lines = [simplify(coords, CORRIDOR_SIMPLIFY_DEG) for coords, _ in display]
-        heatmap_job = pool.submit(build_heatmap, lines, departure, load_lbs)
+        heatmap_job = pool.submit(build_heatmap, corridor, departure, load_lbs) if include_heatmap else None
 
         # Weather for all checkpoints of all routes in one go, then split back up.
         start = floor_hour(departure)
@@ -100,14 +109,16 @@ def plan_trip(
         all_forecasts = get_forecasts([cp.position for cps in checkpoints for cp in cps], start, hours)
 
         # The heatmap is extra; if it fails the plan is still worth showing.
-        try:
-            heatmap, heatmap_error = heatmap_job.result(), None
-        except ProviderError as exc:
-            logger.warning("Heatmap failed: %s", exc)
-            heatmap, heatmap_error = None, str(exc)
-        except Exception:
-            logger.exception("Heatmap failed")
-            heatmap, heatmap_error = None, "The weather heatmap could not be built for this trip."
+        heatmap, heatmap_error = None, None
+        if heatmap_job:
+            try:
+                heatmap = heatmap_job.result()
+            except ProviderError as exc:
+                logger.warning("Heatmap failed: %s", exc)
+                heatmap_error = str(exc)
+            except Exception:
+                logger.exception("Heatmap failed")
+                heatmap_error = HEATMAP_FAILED
 
     forecasts = []
     for cps in checkpoints:
@@ -146,6 +157,8 @@ def plan_trip(
         "routing": {"profile": options.profile, "gross_lbs": options.gross_lbs},
         "heatmap": heatmap,
         "heatmap_error": heatmap_error,
+        # the routes' rough shape, for building the heatmap in a second request
+        "corridor": [_rounded(line) for line in corridor],
     }
 
 

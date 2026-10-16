@@ -41,7 +41,7 @@ class CheckpointTests(SimpleTestCase):
 class PlanTripTests(SimpleTestCase):
     """plan_trip with routing and weather replaced by fakes."""
 
-    def plan(self, routes, forecast_for_route, load_lbs=20_000):
+    def plan(self, routes, forecast_for_route, load_lbs=20_000, include_heatmap=True):
         def fake_forecasts(points, start, hours):
             # Route i starts at longitude -90 + i, so pick its forecast by longitude.
             return [forecast_for_route[round(lon + 90)] for _, lon in points]
@@ -52,7 +52,12 @@ class PlanTripTests(SimpleTestCase):
             mock.patch.object(planner, "build_heatmap", side_effect=self.heatmap),
         ):
             return planner.plan_trip(
-                {"label": "A", "lat": 35, "lon": -90}, {"label": "B", "lat": 36, "lon": -90}, DEPARTURE, load_lbs, 10
+                {"label": "A", "lat": 35, "lon": -90},
+                {"label": "B", "lat": 36, "lon": -90},
+                DEPARTURE,
+                load_lbs,
+                10,
+                include_heatmap=include_heatmap,
             )
 
     heatmap = mock.Mock(return_value={"frames": {}})
@@ -61,6 +66,16 @@ class PlanTripTests(SimpleTestCase):
         result = self.plan([straight_route(100, 2)], [constant_forecast()])
         self.assertEqual(result["heatmap"], {"frames": {}})
         self.assertIsNone(result["heatmap_error"])
+
+    def test_heatmap_can_be_left_out_for_a_separate_request(self):
+        self.heatmap = mock.Mock()
+        result = self.plan([straight_route(100, 2)], [constant_forecast()], include_heatmap=False)
+        self.heatmap.assert_not_called()
+        self.assertIsNone(result["heatmap"])
+        self.assertIsNone(result["heatmap_error"])
+        # the corridor is what the client sends to /api/heatmap
+        self.assertEqual(len(result["corridor"]), 1)
+        self.assertEqual(result["corridor"][0][0], [35.0, -90.0])
 
     def test_heatmap_failure_does_not_break_the_plan(self):
         self.heatmap = mock.Mock(side_effect=ProviderError("weather down"))

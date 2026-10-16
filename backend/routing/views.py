@@ -3,10 +3,12 @@ import logging
 from django.conf import settings
 from django.http import FileResponse, HttpResponse
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from . import planner, risk
-from .serializers import PlanRequestSerializer
+from .heatmap import build_heatmap
+from .serializers import HeatmapRequestSerializer, PlanRequestSerializer
 from .services import ProviderError, geocoding, tiles
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,10 @@ class RulesView(APIView):
 
 
 class PlanView(APIView):
+    # Each plan spends free-tier routing and weather quota (see THROTTLE_RATES).
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "plan"
+
     def post(self, request):
         serializer = PlanRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -48,6 +54,7 @@ class PlanView(APIView):
                 data["load_lbs"],
                 int(data["interval_miles"]),
                 data["rest_breaks"],
+                data["include_heatmap"],
             )
         except ProviderError as exc:
             return bad_gateway(exc)
@@ -57,6 +64,23 @@ class PlanView(APIView):
             logger.exception("Planning failed")
             return Response({"detail": "Something went wrong while planning this trip. Please try again."}, status=500)
         return Response(plan)
+
+
+class HeatmapView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "heatmap"
+
+    def post(self, request):
+        serializer = HeatmapRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            return Response(build_heatmap(data["corridor"], data["departure"], data["load_lbs"]))
+        except ProviderError as exc:
+            return bad_gateway(exc)
+        except Exception:
+            logger.exception("Heatmap failed")
+            return Response({"detail": planner.HEATMAP_FAILED}, status=500)
 
 
 def find_place(place: dict, role: str) -> dict:

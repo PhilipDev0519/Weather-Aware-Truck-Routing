@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "../api";
 import { CheckpointTable } from "../components/CheckpointTable";
 import { Icon } from "../components/Icon";
@@ -11,11 +11,13 @@ import type { Checkpoint, PlanRequest, PlanResponse } from "../types";
 const errorMessage = (err: unknown) =>
   err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
 const isAbort = (err: unknown) => (err as Error)?.name === "AbortError";
+const NO_HEATMAP: HeatmapState = { data: null, loading: false, error: null };
 
 export function PlannerPage() {
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapState>(NO_HEATMAP);
   const [selectedId, setSelectedId] = useState("");
   const [focus, setFocus] = useState<{ routeName: string; cp: Checkpoint } | null>(null);
   const inflight = useRef<AbortController>();
@@ -43,13 +45,23 @@ export function PlannerPage() {
     setPlan(result);
     setSelectedId(result.recommended_route_id);
     setLoading(false);
-  }, []);
 
-  // The heatmap arrives with the plan (the server builds both at the same time).
-  const heatmap: HeatmapState = useMemo(
-    () => ({ data: plan?.heatmap ?? null, loading: false, error: plan?.heatmap_error ?? null }),
-    [plan],
-  );
+    // Routes first, then the heatmap for their corridor.
+    if (result.heatmap || result.heatmap_error) {
+      setHeatmap({ data: result.heatmap, loading: false, error: result.heatmap_error });
+      return;
+    }
+    setHeatmap({ ...NO_HEATMAP, loading: true });
+    try {
+      const data = await api.heatmap(
+        { corridor: result.corridor, departure: result.departure, load_lbs: result.load_lbs },
+        controller.signal,
+      );
+      setHeatmap({ ...NO_HEATMAP, data });
+    } catch (err) {
+      if (!isAbort(err)) setHeatmap({ ...NO_HEATMAP, error: errorMessage(err) });
+    }
+  }, []);
 
   const selected = plan?.routes.find((r) => r.id === selectedId) ?? null;
   const onFocus = useCallback((cp: Checkpoint) => setFocus({ routeName: selected?.name ?? "", cp }), [selected?.name]);

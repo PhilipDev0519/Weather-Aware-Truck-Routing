@@ -78,6 +78,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "UNAUTHENTICATED_USER": None,
+    # Per client IP. Plans spend free-tier routing and weather quota, so cap
+    # how often one visitor can ask; normal use stays well below this.
+    "DEFAULT_THROTTLE_RATES": {
+        "plan": os.environ.get("PLAN_RATE_LIMIT", "15/min"),
+        "heatmap": os.environ.get("HEATMAP_RATE_LIMIT", "15/min"),
+    },
 }
 
 ROUTING = {

@@ -82,8 +82,15 @@ export interface PlanResponse {
   warnings: string[];
   // "truck": openrouteservice's HGV profile; "car": OSRM capped at truck speed
   routing: { profile: "truck" | "car"; gross_lbs: number | null };
-  heatmap: HeatmapResponse | null;
+  heatmap: HeatmapResponse | null; // null when requested separately (see api.heatmap)
   heatmap_error: string | null;
+  corridor: LatLng[][]; // the routes' rough shape, sent back to /api/heatmap
+}
+
+export interface HeatmapRequest {
+  corridor: LatLng[][];
+  departure: string;
+  load_lbs: number;
 }
 
 export interface Thresholds {

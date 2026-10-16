@@ -51,7 +51,8 @@ Troubleshooting:
 
 ```
 React (Vite, TypeScript, react-leaflet)
-   │  POST /api/plan → routes, checkpoints, risk, recommendation and a 49-hour heatmap
+   │  POST /api/plan    → routes, checkpoints, risk, recommendation
+   │  POST /api/heatmap → 49-hour weather heatmap for those routes' corridor
    ▼
 Django REST API ── route_options ── openrouteservice (truck roads) + OSRM (road speeds; car fallback)
                ├── weather ──────── Open-Meteo hourly forecast
@@ -91,7 +92,8 @@ Load rules: ≥55 mph → No Travel for any load · 45–54 mph + >30,000 lb →
 Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The UI states which criterion decided, e.g. *"Route B has the lowest High miles (0.0 mi vs 42.0 mi on Route A), with Severe miles tied."*
 
 ### Heatmap (`heatmap.py`, `map/heatmapFrames.ts`)
-- The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) with the plan, for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
+- The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
+- **Routes first.** The heatmap needs about twice as many forecast locations as the checkpoints, so the browser asks for it in a second request (`/api/heatmap`, with the corridor the plan returned) and shows the routes while it loads. When the free weather API is busy, the routes still appear quickly.
 - The browser blends wind, rain and snow between grid points and classifies each pixel with the same rules. Band edges are smooth, every colour is a real risk level, and at grid points it matches the server exactly.
 - Frames are drawn in the background, so the slider and the play button run without delay. A 🚚 marker shows where the truck would be at that hour; hovering shows the conditions under the cursor.
 
@@ -99,9 +101,9 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (106) | `cd backend && python manage.py test routing` |
+| Backend tests (112) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (36, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (39, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.
@@ -139,6 +141,7 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 | `TRUCK_MAX_SPEED_MPH` | `65` | Truck speed cap for ETAs |
 | `OPEN_METEO_API_KEY`, `OPEN_METEO_URL` | free API | Paid key, with `https://customer-api.open-meteo.com/v1/forecast` |
 | `HEATMAP_MAX_CELLS` | `160` | Heatmap forecast locations; ~400 with a paid weather key |
+| `PLAN_RATE_LIMIT`, `HEATMAP_RATE_LIMIT` | `15/min` | Requests per client IP, to protect the free API quotas |
 | `OSRM_URL`, `ORS_URL`, `PHOTON_URL` | public servers | Self-hosted instances |
 
 ## API
@@ -146,12 +149,13 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 | Endpoint | Description |
 |---|---|
 | `POST /api/plan` | Plan a trip (below) |
+| `POST /api/heatmap` | Heatmap for a plan: `{corridor, departure, load_lbs}`, with `corridor` from the plan |
 | `GET /api/geocode?q=` | Place suggestions `[{label, lat, lon}]` |
 | `GET /api/rules` | Risk thresholds and load rules |
 | `GET /api/tiles/<style>/<z>/<x>/<y>` | Map tiles, fetched by the server (`streets`, `terrain`, `satellite`, `labels`). The map loads tiles straight from the tile servers and only uses this for a tile that fails |
 | `GET /api/health` | Health check |
 
-`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to 14 days ahead; `interval_miles` is 10, 25 or 50. The response has the routes (with checkpoints, risk miles and rank), the recommendation and its reason, warnings, `routing` (`truck` or `car`, and the gross weight) and the heatmap. Errors are `{detail}`: 400 for bad input, an unknown place or no drivable route; 502 when an outside service fails.
+`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks, include_heatmap}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to 14 days ahead; `interval_miles` is 10, 25 or 50. The response has the routes (with checkpoints, risk miles and rank), the recommendation and its reason, warnings, `routing` (`truck` or `car`, and the gross weight), the `corridor` and, unless `include_heatmap` is false, the heatmap. Errors are `{detail}`: 400 for bad input, an unknown place or no drivable route; 429 when a client sends too many requests; 502 when an outside service fails.
 
 ## Project structure
 
