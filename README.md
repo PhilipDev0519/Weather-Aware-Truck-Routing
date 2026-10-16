@@ -108,13 +108,13 @@ GitHub Actions runs all of these on every push, then builds and starts the Docke
 
 ### Vercel
 
-`vercel.json` builds the React app as static files and runs the Django API as one Python function (`api/index.py`) behind `/api/*`.
+`vercel.json` deploys the repo as one Vercel project with two [services](https://vercel.com/docs/services): `frontend` (the Vite build, served as static files) and `backend` (Django, run as a Python function). `/api/*` goes to the backend; everything else to the frontend.
 
-1. On [vercel.com/new](https://vercel.com/new), import this GitHub repository. Leave the framework preset, root directory and build settings as they are; `vercel.json` sets them.
+1. On [vercel.com/new](https://vercel.com/new), import this GitHub repository. Keep **Root Directory** `./` and **Application Preset** *Services*.
 2. Under *Environment Variables*, add `ORS_API_KEY` (truck routing) and `DJANGO_SECRET_KEY` (any long random string).
 3. Deploy. Every push to `main` redeploys.
 
-The function may run for up to 300 s, enough for a long trip that waits out the weather API's per-minute limit. Each function instance has its own in-memory cache, so repeat plans are only instant when they reach a warm instance.
+Each function instance has its own in-memory cache, so repeat plans are only instant when they reach a warm instance.
 
 ### Docker / Render
 
@@ -154,8 +154,7 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 ## Project structure
 
 ```
-api/index.py         Vercel entry point (wraps the Django app)
-vercel.json          Vercel build + rewrites
+vercel.json          Vercel services (frontend + backend) and routing
 backend/routing/
   route_options.py   3 distinct routes        planner.py    checkpoints, ETAs, risk miles
   risk.py            thresholds + load rules  recommend.py  ranking + explanation
