@@ -225,6 +225,11 @@ button:disabled {
   color: #6d1a9c;
 }
 
+.badge.warn {
+  background: #fdf0e1;
+  color: #9a4a06;
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -1848,6 +1853,11 @@ button:disabled {
   display: inline-grid;
   box-shadow: var(--shadow);
   color: var(--ink-2);
+}
+
+.route-label .rest-note {
+  color: #9a4a06;
+  font-weight: 700;
 }
 
 .route-label b {

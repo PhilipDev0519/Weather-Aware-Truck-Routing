@@ -64,6 +64,7 @@ Django REST API ── route_options ── openrouteservice (truck roads) + OSR
 - **Truck roads.** Routes come from openrouteservice's heavy-goods-vehicle profile, given the truck's gross weight (load + 33,000 lb empty truck), so roads with a lower weight limit are avoided.
 - **US truck times.** That profile drives rural interstates at ~44 mph (its speeds suit European truck limits). So each route is timed with OSRM's US road speeds along the same path, capped at **65 mph**. Chicago → Memphis: 9.6 h of driving, not 11.9 h.
 - **Three options.** Neither service returns three alternatives for long trips, so extra candidates are routed through via-points pushed to either side of the trip, wide detours first, then tighter ones if the third route would otherwise need an extra overnight rest. Out-and-back detours are cut. Candidates that are more than 50% slower, or share over 80% of their road with a chosen route, are dropped. The three quickest door-to-door are kept.
+- **Extra overnight rests are flagged.** Near the 11-hour driving limit, a route only a few percent longer needs a whole extra 10-hour rest. When no closer alternative exists (e.g. Kansas City → Nashville), that route is still shown and ranked on its real door-to-door time, with a warning and an *Extra overnight rest* badge so the reason is obvious.
 - **Fallback.** Without a key, or if truck routing fails or its daily quota runs out, OSRM car routes are used and the plan says so. All three routes in a plan always use the same speed model.
 
 ### Checkpoints and ETAs (`planner.py`, `hos.py`)
@@ -101,9 +102,9 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (114) | `cd backend && python manage.py test routing` |
+| Backend tests (116) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (39, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (40, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.

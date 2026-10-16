@@ -136,6 +136,7 @@ def plan_trip(
     best = ranked[0]
     best["recommended"] = True
 
+    warnings.extend(_extra_rest_warnings(results))
     if any(r["risk_miles"]["unknown"] > 0 for r in results):
         warnings.append("Part of the trip is past the end of the forecast; those miles are shown as Unknown.")
     if best["risk_miles"]["no_travel"] > 0:
@@ -224,6 +225,28 @@ def _evaluate(
         # the coloured stretches together make up the whole route line
         "segments": _risk_segments(line, checkpoints, levels),
     }
+
+
+def _extra_rest_warnings(results: list[dict]) -> list[str]:
+    """Point out routes that only work with more 10-hour rests than the others.
+
+    Near the 11-hour driving limit, a route only a few percent longer needs a
+    whole extra rest, which can double its door-to-door time. It's still a
+    real option (and ranked on that time), but the reason should be obvious.
+    """
+    fewest = min(r["stops"]["rests"] for r in results)
+    quickest = min(results, key=lambda r: r["duration_hours"])
+    warnings = []
+    for r in results:
+        r["extra_rests"] = r["stops"]["rests"] - fewest
+        if r["extra_rests"]:
+            rests = "an extra 10-hour rest stop" if r["extra_rests"] == 1 else f"{r['extra_rests']} extra 10-hour rests"
+            warnings.append(
+                f"{r['name']} needs {rests} (its driving time passes the 11-hour limit), so it takes "
+                f"{recommend.format_hours(r['duration_hours'])} door to door vs "
+                f"{recommend.format_hours(quickest['duration_hours'])} on {quickest['name']}."
+            )
+    return warnings
 
 
 def _display_line(route: Route) -> tuple[list[LatLon], list[float]]:

@@ -104,6 +104,28 @@ class PlanTripTests(SimpleTestCase):
         self.assertEqual(ranks, {"A": 2, "B": 1})
         self.assertIn("Severe miles", result["recommendation_reason"])
 
+    def test_route_needing_an_extra_overnight_rest_is_flagged(self):
+        quick = straight_route(500, 10.5, start=(35.0, -90.0))  # under 11 h of driving
+        overnight = straight_route(560, 11.5, start=(35.0, -89.0))  # just over: a 10 h rest
+        result = self.plan([quick, overnight], [constant_forecast(), constant_forecast()])
+        extra = {r["id"]: r["extra_rests"] for r in result["routes"]}
+        self.assertEqual(extra, {"A": 0, "B": 1})
+        self.assertEqual(
+            [w for w in result["warnings"] if "rest" in w],
+            [
+                "Route B needs an extra 10-hour rest stop (its driving time passes the 11-hour limit), "
+                "so it takes 22h 00m door to door vs 11h 00m on Route A."
+            ],
+        )
+
+    def test_no_rest_warning_when_routes_need_the_same_stops(self):
+        result = self.plan(
+            [straight_route(500, 10.5, start=(35.0, -90.0)), straight_route(520, 10.8, start=(35.0, -89.0))],
+            [constant_forecast(), constant_forecast()],
+        )
+        self.assertEqual([r["extra_rests"] for r in result["routes"]], [0, 0])
+        self.assertFalse(any("rest" in w for w in result["warnings"]))
+
     def test_missing_forecast_is_unknown(self):
         result = self.plan([straight_route(100, 2)], [None])
         route = result["routes"][0]

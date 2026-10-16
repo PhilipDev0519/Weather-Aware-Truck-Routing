@@ -27,6 +27,7 @@ export function route(overrides: Partial<RouteOption> = {}): RouteOption {
     duration_hours: 2,
     driving_hours: 2,
     stops: { breaks: 0, rests: 0 },
+    extra_rests: 0,
     arrival: "2026-01-10T14:00:00+00:00",
     risk_miles: { low: 100, moderate: 0, high: 0, severe: 0, no_travel: 0, unknown: 0 },
     avg_risk: 0,

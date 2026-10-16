@@ -51,6 +51,7 @@ export interface RouteOption {
   duration_hours: number; // door to door, including any rest stops
   driving_hours: number;
   stops: { breaks: number; rests: number };
+  extra_rests: number; // 10 h rests beyond what the route with the fewest needs
   arrival: string;
   risk_miles: RiskMiles;
   avg_risk: number;

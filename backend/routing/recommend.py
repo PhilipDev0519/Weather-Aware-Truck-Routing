@@ -24,7 +24,7 @@ def _miles(level: str) -> Criterion:
     return Criterion(label, lambda r: round(r["risk_miles"][level], 1), lambda r: f"{r['risk_miles'][level]:.1f} mi")
 
 
-def _hours(hours: float) -> str:
+def format_hours(hours: float) -> str:
     minutes = round(hours * 60)
     return f"{minutes // 60}h {minutes % 60:02d}m"
 
@@ -34,7 +34,7 @@ CRITERIA = (
     _miles("severe"),
     _miles("high"),
     Criterion("average risk", lambda r: round(r["avg_risk"], 2), lambda r: f"{r['avg_risk']:.2f}"),
-    Criterion("travel time", lambda r: round(r["duration_hours"] * 60), lambda r: _hours(r["duration_hours"])),
+    Criterion("travel time", lambda r: round(r["duration_hours"] * 60), lambda r: format_hours(r["duration_hours"])),
 )
 
 

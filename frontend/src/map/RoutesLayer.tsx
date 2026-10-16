@@ -22,6 +22,7 @@ function routeLabelIcon(route: RouteOption, selected: boolean) {
     html: `<div class="route-label${selected ? " selected" : ""}${route.recommended ? " recommended" : ""}">
       <b>${route.recommended ? "★ " : ""}${route.name}</b>
       <span>${formatDuration(route.duration_hours)} · ${formatMiles(route.distance_miles)}</span>
+      ${route.extra_rests > 0 ? `<span class="rest-note">incl. extra 10 h rest</span>` : ""}
       ${details}
     </div>`,
   });

@@ -62,6 +62,11 @@ export function RouteCards({ routes, selectedId, onSelect }: Props) {
                 </span>
               )}
               {m.no_travel > 0 && <span className="badge danger">No Travel zone</span>}
+              {route.extra_rests > 0 && (
+                <span className="badge warn" title="Its driving time passes the 11-hour limit">
+                  <Icon name="clock" size={12} /> Extra overnight rest
+                </span>
+              )}
             </div>
             <div className="card-stats">
               <span>

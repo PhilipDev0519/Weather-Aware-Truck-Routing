@@ -29,6 +29,22 @@ const routes = [
 ];
 
 describe("RouteCards", () => {
+  it("flags a route that needs an extra overnight rest", () => {
+    const overnight = route({
+      id: "D",
+      name: "Route D",
+      rank: 3,
+      duration_hours: 22,
+      driving_hours: 11.5,
+      stops: { breaks: 1, rests: 1 },
+      extra_rests: 1,
+    });
+    render(<RouteCards routes={[routes[0], overnight]} selectedId="A" onSelect={() => {}} />);
+    const [quick, slow] = screen.getAllByRole("button");
+    expect(within(slow).getByText(/Extra overnight rest/)).toBeTruthy();
+    expect(within(quick).queryByText(/Extra overnight rest/)).toBeNull();
+  });
+
   it("lists routes best first and marks the recommendation", () => {
     render(<RouteCards routes={routes} selectedId="B" onSelect={() => {}} />);
     const cards = screen.getAllByRole("button");
