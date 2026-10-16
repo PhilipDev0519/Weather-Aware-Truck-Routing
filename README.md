@@ -4,6 +4,8 @@ A React + Django web app that helps a truck driver choose the safest route based
 
 Enter an origin, destination, departure time and load weight. The app finds **3 route options**, checks the forecast every **10 / 25 / 50 miles** for the hour the truck will reach each point, rates the risk with the spec's rules and recommends a route. The map shows every route, checkpoint, risk level, ETA and route summary, plus a **weather heatmap along the corridor with a 0–48 h slider**.
 
+**Live app:** https://weather-aware-truck-routing-jhonacestina.vercel.app/
+
 ![Screenshot](docs/screenshot.png)
 
 ## Requirements at a glance
