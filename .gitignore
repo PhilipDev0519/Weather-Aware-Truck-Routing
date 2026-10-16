@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+backend/staticfiles/
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.env
+
+# Vercel
+.vercel/
+
+# Tool caches
+.ruff_cache/

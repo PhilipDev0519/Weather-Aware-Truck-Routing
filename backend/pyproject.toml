@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".venv", "staticfiles"]
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle, isort, bugbear, pyupgrade, simplify, django
+select = ["F", "E", "W", "I", "B", "UP", "SIM", "DJ"]
+# zip(a, a[1:]) pairs neighbours on purpose; strict=True would break it.
+ignore = ["B905"]
+
