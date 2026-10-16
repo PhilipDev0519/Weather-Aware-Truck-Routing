@@ -3,8 +3,8 @@ import type { HeatLayer, HeatmapResponse, RiskLevel } from "../types";
 
 const LEVEL_RGB = LEVELS.map((l) => hexToRgb(l.color));
 // Low gets a faint tint so a calm day still shows the corridor that was checked.
-const LEVEL_ALPHA = [0.14, 0.38, 0.48, 0.58, 0.68];
-const LOW_FADE_MAX = 0.3; // weather layers: how strong the Low band gets near its upper edge
+const LEVEL_ALPHA = [0.2, 0.4, 0.5, 0.6, 0.7];
+const LOW_FADE_MAX = 0.4; // weather layers: how strong the Low band gets near its upper edge
 const MAX_IMAGE_PX = 480; // longest side of a rendered frame; the browser smooths the rest
 
 export interface Conditions {

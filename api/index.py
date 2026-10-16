@@ -1,6 +1,7 @@
-"""Vercel entry point: the Django API as a Python serverless function.
+"""Vercel entry point: the Django API as one Python serverless function.
 
-vercel.json sends /api/* here; the React app is served as static files.
+vercel.json sends every /api/* request here; the React app is served as
+static files by Vercel itself.
 """
 
 import os

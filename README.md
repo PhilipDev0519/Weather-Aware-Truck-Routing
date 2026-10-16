@@ -97,7 +97,7 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (104) | `cd backend && python manage.py test routing` |
+| Backend tests (106) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
 | Frontend tests (36, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
