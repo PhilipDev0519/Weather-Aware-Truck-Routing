@@ -1627,20 +1627,30 @@ button:disabled {
   background: var(--brand);
   color: #fff;
   padding: 9px 16px;
-  border-radius: 999px;
+  border-radius: 22px;
   font-weight: 600;
   font-size: 14px;
   box-shadow: var(--shadow-lg);
   flex-wrap: wrap;
   justify-content: center;
-  max-width: calc(100% - 32px);
+  width: max-content;
+  max-width: min(560px, calc(100% - 32px));
 }
 
 .map-loading small {
   flex-basis: 100%;
   text-align: center;
+  text-wrap: balance;
   font-weight: 500;
   opacity: 0.85;
+}
+
+/* On a phone, stay clear of the zoom and layer buttons on the right. */
+@media (max-width: 600px) {
+  .map-loading {
+    max-width: calc(100% - 128px);
+    font-size: 13px;
+  }
 }
 
 .map-empty {

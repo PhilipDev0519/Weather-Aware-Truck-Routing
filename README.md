@@ -101,7 +101,7 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (112) | `cd backend && python manage.py test routing` |
+| Backend tests (114) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
 | Frontend tests (39, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
@@ -176,7 +176,7 @@ frontend/src/
 
 ## Limitations
 - **Truck restrictions:** weight limits are respected; height and hazmat aren't modelled, since the form doesn't ask for them.
-- **Free-tier quotas:** truck routing allows a limited number of requests a day (a new plan uses 5–9; repeats are cached for 6 h). When it runs out, plans use car routes. The free weather API allows ~600 locations a minute, so a coast-to-coast trip at 10-mile spacing waits out the limit and takes 1–2 minutes.
+- **Free-tier quotas:** truck routing allows a limited number of requests a day (a new plan uses 5–9; repeats are cached for 6 h). When it runs out, plans use car routes. The free weather API allows ~600 locations a minute per server IP, and on shared hosting such as Vercel other apps use the same IP. A plan that hits the limit waits for it to lift: one request probes every 5 s, so the plan carries on within seconds of the limit resetting (at most ~75 s). The page says why it's waiting. A coast-to-coast trip at 10-mile spacing always needs more than one minute's quota.
 - **Forecast range:** forecasts end after 16 days. Checkpoints beyond that show as **Unknown** and are left out of the average risk, with a warning.
 - **Hours of service** cover the two rules that apply within one trip; sleeper-berth splits and weekly limits aren't modelled.
 - The cache is in memory, per process. Use Redis when running several instances.

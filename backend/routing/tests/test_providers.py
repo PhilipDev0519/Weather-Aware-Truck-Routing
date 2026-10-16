@@ -26,8 +26,30 @@ def limited(reason):
     return reply(429, {"error": True, "reason": reason})
 
 
-@mock.patch.object(services.time, "sleep")
+class FakeClock:
+    """Stands in for time.monotonic/time.sleep, so waits take no real time."""
+
+    def __init__(self):
+        self.now = 1000.0
+        self.sleeps = []
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.sleeps.append(seconds)
+        self.now += seconds
+
+
 class HttpGetTests(SimpleTestCase):
+    def setUp(self):
+        self.clock = FakeClock()
+        for name in ("sleep", "monotonic"):
+            patcher = mock.patch.object(services.time, name, getattr(self.clock, name))
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        services._gates.clear()
+
     def get(self, replies, **kwargs):
         with mock.patch.object(services.session, "request", side_effect=replies) as get:
             try:
@@ -35,37 +57,53 @@ class HttpGetTests(SimpleTestCase):
             finally:
                 self.calls = get.call_count
 
-    def test_busy_server_is_retried(self, sleep):
+    def test_busy_server_is_retried(self):
         response = self.get([reply(503), reply(502), reply(200)])
         self.assertEqual((response.status_code, self.calls), (200, 3))
 
-    def test_server_error_is_returned_once_retries_run_out(self, sleep):
+    def test_server_error_is_returned_once_retries_run_out(self):
         response = self.get([reply(503)] * (services.BUSY_RETRIES + 1))
         self.assertEqual(response.status_code, 503)
 
-    def test_too_many_concurrent_requests_retries_quickly(self, sleep):
+    def test_too_many_concurrent_requests_retries_quickly(self):
         response = self.get([limited("Too many concurrent requests"), reply(200)])
         self.assertEqual(response.status_code, 200)
-        self.assertLess(sleep.call_args.args[0], 5)
+        self.assertLess(self.clock.sleeps[-1], 5)
 
-    def test_per_minute_limit_is_waited_out_when_asked(self, sleep):
+    def test_per_minute_limit_is_probed_every_few_seconds(self):
         minutely = limited("Minutely API request limit exceeded. Please try again in one minute.")
         response = self.get([minutely, minutely, reply(200)], wait_for_rate_limit=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([c.args[0] for c in sleep.call_args_list], list(services.RATE_LIMIT_WAITS_S[:2]))
+        self.assertEqual(self.clock.sleeps, [services.RATE_LIMIT_PROBE_S] * 2)
 
-    def test_per_minute_limit_gives_up_eventually(self, sleep):
+    def test_per_minute_limit_gives_up_eventually(self):
         minutely = limited("Minutely API request limit exceeded.")
         with self.assertRaisesRegex(ProviderError, "rate limiting"):
-            self.get([minutely] * 10, wait_for_rate_limit=True)
-        self.assertEqual(self.calls, len(services.RATE_LIMIT_WAITS_S) + 1)
+            self.get([minutely] * 100, wait_for_rate_limit=True)
+        self.assertLessEqual(sum(self.clock.sleeps), services.MAX_RATE_LIMIT_WAIT_S)
+        self.assertGreater(sum(self.clock.sleeps), services.MAX_RATE_LIMIT_WAIT_S - services.RATE_LIMIT_PROBE_S)
 
-    def test_hourly_limit_fails_straight_away(self, sleep):
+    def test_requests_wait_while_another_is_rate_limited(self):
+        # Another request has just been told "too many": this one waits for the
+        # next probe slot instead of hitting the host straight away.
+        services.rate_limit_gate("api.example.com").limited()
+        self.assertEqual(self.get([reply(200)], wait_for_rate_limit=True).status_code, 200)
+        self.assertEqual(self.clock.sleeps, [services.RATE_LIMIT_PROBE_S])
+        # The success lifted the limit, so the next request goes straight through.
+        self.get([reply(200)], wait_for_rate_limit=True)
+        self.assertEqual(len(self.clock.sleeps), 1)
+
+    def test_retry_after_header_is_respected(self):
+        minutely = reply(429, {"reason": "Minutely API request limit exceeded."}, headers={"Retry-After": "20"})
+        self.get([minutely, reply(200)], wait_for_rate_limit=True)
+        self.assertEqual(self.clock.sleeps, [20])
+
+    def test_hourly_limit_fails_straight_away(self):
         with self.assertRaisesRegex(ProviderError, "Hourly"):
             self.get([limited("Hourly API request limit exceeded.")], wait_for_rate_limit=True)
-        sleep.assert_not_called()
+        self.assertEqual(self.clock.sleeps, [])
 
-    def test_network_errors_are_retried_then_reported(self, sleep):
+    def test_network_errors_are_retried_then_reported(self):
         error = requests.ConnectionError("reset")
         self.assertEqual(self.get([error, reply(200)]).status_code, 200)
         with self.assertRaisesRegex(ProviderError, "Could not reach api.example.com"):

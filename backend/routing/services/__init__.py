@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
+import threading
 import time
 from urllib.parse import urlsplit
 
@@ -14,10 +15,12 @@ logger = logging.getLogger(__name__)
 
 RETRIES = 2
 BACKOFF_S = 1.5
-# Open-Meteo's free tier counts every location, about 600 a minute. A long trip
-# at 10-mile spacing needs more than that, so wait for the next minute instead
-# of failing the plan.
-RATE_LIMIT_WAITS_S = (12, 24, 30)
+# Open-Meteo's free tier counts every location, about 600 a minute per IP. A
+# long trip at 10-mile spacing needs more than that (and on shared hosting other
+# apps use the same IP), so a per-minute limit is waited out instead of failing
+# the plan: one request probes every few seconds until the limit lifts.
+RATE_LIMIT_PROBE_S = 5
+MAX_RATE_LIMIT_WAIT_S = 75
 MAX_RETRY_AFTER_S = 30
 SERVER_BUSY_STATUSES = frozenset({500, 502, 503, 504})
 BUSY_RETRIES = 4
@@ -44,6 +47,55 @@ session.mount("http://", _adapter)
 
 class ProviderError(Exception):
     """An outside API (routing, weather, geocoding) failed."""
+
+
+class RateLimitGate:
+    """Shared by every thread calling one host, once that host says "too many".
+
+    While the host is limited, requests queue here and one at a time is let
+    through as a probe every RATE_LIMIT_PROBE_S. So a plan carries on within
+    a few seconds of the limit lifting, without a dozen threads retrying at
+    once (and spending the quota as it comes back).
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._limited = False
+        self._open_at = 0.0
+
+    def wait_turn(self, deadline: float) -> bool:
+        """Block until this request may go. False if that would pass the deadline."""
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                if not self._limited:
+                    return True
+                if now >= self._open_at:
+                    self._open_at = now + RATE_LIMIT_PROBE_S  # the others wait for this probe
+                    return True
+                delay = self._open_at - now
+            if now + delay > deadline:
+                return False
+            time.sleep(delay)
+
+    def limited(self, retry_after_s: float | None = None) -> None:
+        wait = min(max(RATE_LIMIT_PROBE_S, retry_after_s or 0), MAX_RETRY_AFTER_S)
+        with self._lock:
+            self._limited = True
+            self._open_at = max(self._open_at, time.monotonic() + wait)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._limited = False
+
+
+_gates: dict[str, RateLimitGate] = {}
+_gates_lock = threading.Lock()
+
+
+def rate_limit_gate(host: str) -> RateLimitGate:
+    with _gates_lock:
+        return _gates.setdefault(host, RateLimitGate())
 
 
 def _rate_limit_reason(response: requests.Response) -> str:
@@ -81,14 +133,17 @@ def http_request(
 ) -> requests.Response:
     """A request that retries on network errors, busy servers and 429s.
 
-    With wait_for_rate_limit, a per-minute limit is waited out (up to about a
-    minute) instead of failing straight away. Only use it for requests that
-    are safe to repeat.
+    With wait_for_rate_limit, a per-minute limit is waited out (see
+    RateLimitGate, up to MAX_RATE_LIMIT_WAIT_S) instead of failing straight
+    away. Only use it for requests that are safe to repeat.
     """
     host = urlsplit(url).netloc
-    waits = RATE_LIMIT_WAITS_S if wait_for_rate_limit else tuple(BACKOFF_S * (i + 1) for i in range(RETRIES))
+    gate = rate_limit_gate(host) if wait_for_rate_limit else None
+    deadline = time.monotonic() + MAX_RATE_LIMIT_WAIT_S
     failures = busy = limited = 0
     while True:
+        if gate and not gate.wait_turn(deadline):
+            raise ProviderError(f"{host} is rate limiting requests; try again in a minute.")
         try:
             response = session.request(
                 method, url, params=params, json=json, headers=headers, timeout=settings.ROUTING["HTTP_TIMEOUT_S"]
@@ -106,6 +161,8 @@ def http_request(
             time.sleep(BACKOFF_S * busy + random.random())
             continue
         if response.status_code != 429:
+            if gate:
+                gate.clear()
             return response
 
         reason = _rate_limit_reason(response)
@@ -117,12 +174,12 @@ def http_request(
         # Waiting a minute won't help with an hourly or daily quota.
         long_quota = any(word in reason.lower() for word in ("hourly", "daily", "monthly"))
         long_quota |= response.headers.get("X-Ratelimit-Remaining") == "0"
-        if long_quota or limited >= len(waits):
+        if long_quota or (gate is None and limited >= RETRIES):
             raise ProviderError(f"{host} is rate limiting requests: {reason or 'try again in a minute.'}")
-        wait = waits[limited]
         limited += 1
-        retry_after = _retry_after_s(response)
-        if retry_after is not None:
-            wait = min(max(wait, retry_after), MAX_RETRY_AFTER_S)
-        logger.info("%s rate limited (%s), retrying in %.0f s", host, reason or "429", wait)
-        time.sleep(wait)
+        if gate:
+            if limited == 1:
+                logger.info("%s rate limited (%s), waiting for it to lift", host, reason or "429")
+            gate.limited(_retry_after_s(response))
+        else:
+            time.sleep(BACKOFF_S * limited)

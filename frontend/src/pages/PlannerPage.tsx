@@ -175,18 +175,25 @@ export function PlannerPage() {
 
 const SLOW_PLAN_MS = 8000;
 
-// Most plans take a second or two. A long trip at 10-mile spacing needs more
-// forecasts than the free weather API allows per minute, so say why it's slow.
+// Most plans take a second or two. When one doesn't, it's almost always the free
+// weather API's per-minute limit (shared by everyone on the same server), so
+// say so and show that it's still going.
 function MapLoading() {
-  const [slow, setSlow] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
   useEffect(() => {
-    const timer = window.setTimeout(() => setSlow(true), SLOW_PLAN_MS);
-    return () => window.clearTimeout(timer);
+    const started = Date.now();
+    const timer = window.setInterval(() => setElapsedMs(Date.now() - started), 1000);
+    return () => window.clearInterval(timer);
   }, []);
   return (
     <div className="map-loading">
       <span className="spinner" /> Finding routes and forecasts…
-      {slow && <small>Long trips need many forecasts; this can take a minute or two.</small>}
+      {elapsedMs >= SLOW_PLAN_MS && (
+        <small>
+          The free weather service allows a limited number of forecasts per minute, so we're waiting for it to accept
+          more. This usually clears within a minute ({Math.round(elapsedMs / 1000)} s so far).
+        </small>
+      )}
     </div>
   );
 }
