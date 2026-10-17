@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
-MAX_DAYS_AHEAD = 14  # forecasts go out 16 days, leave some room for the drive
+from .services.weather import forecast_end
+
 MAX_HOURS_PAST = 1
 MAX_LOAD_LBS = 150_000
 MAX_CORRIDOR_LINES = 3  # one per route option
@@ -26,8 +27,13 @@ def validate_departure(value):
     now = timezone.now()
     if value < now - timedelta(hours=MAX_HOURS_PAST):
         raise serializers.ValidationError("Departure time is in the past.")
-    if value > now + timedelta(days=MAX_DAYS_AHEAD):
-        raise serializers.ValidationError(f"Departure must be within {MAX_DAYS_AHEAD} days (forecast range).")
+    # Any departure the forecast reaches is allowed; checkpoints the truck reaches
+    # after the forecast ends are reported as "No forecast".
+    end = forecast_end(now)
+    if value > end:
+        raise serializers.ValidationError(
+            f"Departure must be within the weather forecast range (through {end:%b} {end.day})."
+        )
     return value
 
 

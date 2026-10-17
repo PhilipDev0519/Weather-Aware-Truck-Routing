@@ -11,7 +11,13 @@ const LOCAL_ZONE =
   new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
     .formatToParts(new Date())
     .find((p) => p.type === "timeZoneName")?.value ?? "local";
-const MAX_DAYS_AHEAD = 14;
+// Open-Meteo forecasts run to the end of the 16th day (today included, UTC),
+// the same horizon the API checks departures against (backend/routing/services/weather.py).
+const FORECAST_DAYS = 16;
+export function forecastEnd(now: Date): Date {
+  const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return new Date(midnight + FORECAST_DAYS * 86_400_000 - 3_600_000);
+}
 const MAX_LOAD_LBS = 150_000; // same limit as the API
 
 const EXAMPLES: { name: string; origin: Required<Place>; destination: Required<Place> }[] = [
@@ -85,7 +91,7 @@ export function TripForm({ loading, onSubmit }: Props) {
   };
 
   const now = new Date();
-  const max = new Date(now.getTime() + MAX_DAYS_AHEAD * 86_400_000);
+  const max = forecastEnd(now);
 
   return (
     <form

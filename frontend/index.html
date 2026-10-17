@@ -7,6 +7,19 @@
     <meta name="theme-color" content="#0a2342" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%230a2342'/><g fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><circle cx='7' cy='17' r='2'/><path d='M9 17h6.5a2.5 2.5 0 0 0 0-5h-7a2.5 2.5 0 0 1 0-5H15'/><circle cx='17' cy='7' r='2'/></g></svg>" />
     <title>Weather-Aware Truck Routing</title>
+    <script>
+      // Day or night colours before the first paint (see src/theme.ts).
+      (function () {
+        var theme;
+        try {
+          theme = localStorage.getItem("theme");
+        } catch (e) {}
+        if (theme !== "light" && theme !== "dark")
+          theme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+        if (theme === "dark") document.querySelector('meta[name="theme-color"]').setAttribute("content", "#0b1220");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlanRequest } from "../types";
-import { TripForm } from "./TripForm";
+import { TripForm, forecastEnd } from "./TripForm";
 
 const MEMPHIS = { label: "Memphis, Tennessee, United States", lat: 35.1495, lon: -90.049 };
 
@@ -92,11 +92,33 @@ describe("TripForm", () => {
     expect([departure.getHours(), departure.getMinutes()]).toEqual([19, 30]);
   });
 
-  it("only offers days inside the forecast window", async () => {
+  it("pages through future months but only offers days the forecast covers", async () => {
     const { user } = setup();
     await user.click(screen.getByLabelText(/Departure/));
-    const days = screen.getAllByRole("gridcell").map((cell) => within(cell).getByRole("button"));
-    expect(days.filter((day) => !(day as HTMLButtonElement).disabled)).toHaveLength(15); // today + 14 days
+    expect((screen.getByRole("button", { name: "Previous month" }) as HTMLButtonElement).disabled).toBe(true);
+
+    const pickable = () =>
+      screen
+        .getAllByRole("gridcell")
+        .map((cell) => within(cell).getByRole("button") as HTMLButtonElement)
+        .filter((day) => !day.disabled)
+        .map((day) => day.getAttribute("aria-label"));
+    const offered = new Set(pickable());
+    for (let month = 0; month < 3; month++) {
+      await user.click(screen.getByRole("button", { name: "Next month" }));
+      pickable().forEach((day) => offered.add(day));
+    }
+    // later months can still be opened, with every day greyed out
+    expect(pickable()).toHaveLength(0);
+
+    const today = new Date();
+    const end = forecastEnd(today);
+    const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const days = Math.round(
+      (lastDay.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86_400_000,
+    );
+    expect(offered.size).toBe(days + 1); // today through the last forecast day
+
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(screen.getByLabelText(/Departure/));

@@ -21,6 +21,28 @@
   --danger-soft: #fdecea;
   --warn: #8a5a00;
   --warn-soft: #fff5dd;
+  --caution: #d08700;
+  --rest-note: #9a4a06;
+
+  /* --brand fills buttons and selected states; --brand-ink is brand-coloured text and
+     outlines on a surface; --brand-deep fills the large dark cards. They're the same navy
+     by day and split apart at night. --navy never changes (hero, light buttons on dark). */
+  --navy: #0a2342;
+  --brand-ink: var(--brand);
+  --brand-deep: var(--brand);
+  --brand-deep-2: var(--brand-600);
+  --on-accent: #ffffff;
+  --surface-2: #f8fafb;
+  --surface-glass: rgba(255, 255, 255, 0.95);
+  --input-hover: #b7c5ce;
+  --focus-ring: rgba(31, 78, 140, 0.15);
+  --row-selected: #f6f8fb;
+  --row-recommended: #edf2f9;
+  --skeleton: #e9eef2;
+  --skeleton-hi: #f4f7f9;
+  --map-bg: #e8ecef;
+  --route-label-line: #8796a1;
+  color-scheme: light;
 
   --radius-sm: 8px;
   --radius: 12px;
@@ -43,6 +65,49 @@
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Night mode: set on <html> by index.html and src/theme.ts */
+:root[data-theme="dark"] {
+  --ink: #e6edf6;
+  --ink-2: #c3cddb;
+  --muted: #8f9db2;
+  --line: #233247;
+  --line-strong: #364a65;
+  --bg: #0b1220;
+  --surface: #121b2b;
+  --surface-2: #172234;
+  --brand: #2f64ad;
+  --brand-600: #3b72bd;
+  --brand-500: #6fa8ec;
+  --accent: #80b4f0;
+  --accent-soft: #1a2d47;
+  --brand-soft: #1a2a41;
+  --brand-ink: #9cc3f2;
+  --brand-deep: #15305a;
+  --brand-deep-2: #1c3c6b;
+  --on-accent: #0b1a2e;
+  --flag-red: #d23c4f;
+  --flag-red-600: #b22234;
+  --danger: #ff7a72;
+  --danger-soft: #3a1a1d;
+  --warn: #f2c14e;
+  --warn-soft: #362a0f;
+  --caution: #f2b632;
+  --rest-note: #f0a14a;
+  --surface-glass: rgba(18, 27, 43, 0.94);
+  --input-hover: #4a6080;
+  --focus-ring: rgba(111, 168, 236, 0.25);
+  --row-selected: #172235;
+  --row-recommended: #1a2a41;
+  --skeleton: #1a2536;
+  --skeleton-hi: #243246;
+  --map-bg: #1a222e;
+  --route-label-line: #4f627c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
 }
 
 *,
@@ -156,16 +221,16 @@ button:disabled {
 
 .btn-ghost:hover {
   border-color: var(--brand-500);
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .btn-light {
   background: #fff;
-  color: var(--brand);
+  color: var(--navy);
 }
 
 .btn-light:hover {
-  background: var(--accent-soft);
+  background: #e8f0fa;
 }
 
 .btn-sm {
@@ -208,7 +273,7 @@ button:disabled {
 
 .chip-btn:hover:not(:disabled) {
   border-color: var(--brand-500);
-  color: var(--brand);
+  color: var(--brand-ink);
   background: var(--brand-soft);
 }
 
@@ -244,7 +309,7 @@ button:disabled {
   height: 12px;
   width: 64px;
   border-radius: 6px;
-  background: linear-gradient(90deg, #e9eef2 25%, #f4f7f9 50%, #e9eef2 75%);
+  background: linear-gradient(90deg, var(--skeleton) 25%, var(--skeleton-hi) 50%, var(--skeleton) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
 }
@@ -256,7 +321,7 @@ button:disabled {
 .skeleton-block {
   height: 118px;
   border-radius: var(--radius);
-  background: linear-gradient(90deg, #e9eef2 25%, #f4f7f9 50%, #e9eef2 75%);
+  background: linear-gradient(90deg, var(--skeleton) 25%, var(--skeleton-hi) 50%, var(--skeleton) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
 }
@@ -277,7 +342,7 @@ button:disabled {
   top: 0;
   z-index: 1100;
   height: var(--header-h);
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 
@@ -314,7 +379,7 @@ button:disabled {
 }
 
 .brand-text strong {
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .site-nav {
@@ -340,9 +405,31 @@ button:disabled {
 }
 
 .site-nav a.active {
-  color: var(--brand);
+  color: var(--brand-ink);
   background: var(--brand-soft);
   font-weight: 600;
+}
+
+.theme-toggle {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-2);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand-500);
+  color: var(--brand-ink);
 }
 
 .site-footer {
@@ -350,6 +437,12 @@ button:disabled {
   background: #071a33;
   color: #b8c4d6;
   font-size: 14px;
+}
+
+/* the footer is navy by day; at night it sits a step darker than the page */
+:root[data-theme="dark"] .site-footer {
+  background: #060d18;
+  border-top: 1px solid var(--line);
 }
 
 .footer-inner {
@@ -421,7 +514,7 @@ button:disabled {
   align-items: center;
   padding: 96px 0 132px;
   color: #fff;
-  background: var(--brand);
+  background: var(--navy);
 }
 
 .hero-scene {
@@ -561,7 +654,7 @@ button:disabled {
 .hero-stats strong {
   font-size: 22px;
   letter-spacing: -0.02em;
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .hero-stats span {
@@ -688,7 +781,7 @@ button:disabled {
 }
 
 .rules-table thead th {
-  background: #f8fafb;
+  background: var(--surface-2);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
@@ -723,7 +816,7 @@ button:disabled {
 }
 
 .load-rules {
-  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-600) 100%);
+  background: linear-gradient(160deg, var(--brand-deep) 0%, var(--brand-deep-2) 100%);
   color: #d7e6eb;
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -824,7 +917,7 @@ button:disabled {
   color: #d7e6eb;
   background:
     radial-gradient(600px 200px at 100% 0%, rgba(37, 99, 168, 0.35), transparent 70%),
-    linear-gradient(135deg, var(--brand) 0%, var(--brand-600) 100%);
+    linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-deep-2) 100%);
   box-shadow: var(--shadow-lg);
 }
 
@@ -953,7 +1046,7 @@ button:disabled {
 }
 
 .limits .icon {
-  color: #d08700;
+  color: var(--caution);
   margin-top: 3px;
 }
 
@@ -1045,7 +1138,7 @@ button:disabled {
   font: inherit;
   font-size: 14.5px;
   color: inherit;
-  background: #fff;
+  background: var(--surface);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -1056,13 +1149,13 @@ button:disabled {
 }
 
 .field input:hover {
-  border-color: #b7c5ce;
+  border-color: var(--input-hover);
 }
 
 .field input:focus {
   outline: none;
   border-color: var(--brand-500);
-  box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .field input:focus + .pin-ok,
@@ -1113,7 +1206,7 @@ button:disabled {
   margin: 0;
   padding: 6px;
   list-style: none;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
@@ -1145,7 +1238,7 @@ button:disabled {
   padding: 0 12px 0 38px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   color: inherit;
   font-size: 14.5px;
   text-align: left;
@@ -1155,14 +1248,14 @@ button:disabled {
 }
 
 .dt-trigger:hover {
-  border-color: #b7c5ce;
+  border-color: var(--input-hover);
 }
 
 .dt-trigger:focus-visible,
 .dt-trigger.open {
   outline: none;
   border-color: var(--brand-500);
-  box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .dt-value {
@@ -1197,7 +1290,7 @@ button:disabled {
   display: grid;
   gap: 12px;
   padding: 12px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
@@ -1223,15 +1316,39 @@ button:disabled {
 
 .dt-cal-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 6px;
-  margin: 0 2px 6px;
+  margin: 0 0 6px;
   font-size: 14px;
 }
 
-.dt-cal-head span {
+.dt-nav {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-2);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.dt-nav:hover:not(:disabled) {
+  background: var(--brand-soft);
+  border-color: var(--brand-500);
+}
+
+.dt-nav:disabled {
+  opacity: 0.35;
+}
+
+/* leading and trailing days from the months either side */
+.dt-day.outside:enabled:not(.on) {
   color: var(--muted);
-  font-size: 13px;
 }
 
 .dt-week {
@@ -1394,6 +1511,11 @@ button:disabled {
   color: var(--muted);
 }
 
+.dt-foot strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
 @media (max-width: 420px) {
   .dt-body {
     grid-template-columns: minmax(0, 1fr);
@@ -1434,8 +1556,8 @@ button:disabled {
 }
 
 .segmented button.on {
-  background: #fff;
-  color: var(--brand);
+  background: var(--surface);
+  color: var(--brand-ink);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1556,7 +1678,7 @@ button:disabled {
 
 /* recommended route */
 .recommendation {
-  background: var(--brand);
+  background: var(--brand-deep);
   color: #fff;
   border-radius: var(--radius-lg);
   padding: 16px 18px 14px;
@@ -1742,7 +1864,7 @@ button:disabled {
 }
 
 .comparison thead th.is-selected {
-  box-shadow: inset 0 -2px 0 var(--brand);
+  box-shadow: inset 0 -2px 0 var(--brand-ink);
 }
 
 .comparison tbody th {
@@ -1755,11 +1877,11 @@ button:disabled {
 }
 
 .comparison .is-selected {
-  background: #f6f8fb;
+  background: var(--row-selected);
 }
 
 .comparison .is-recommended {
-  background: #edf2f9;
+  background: var(--row-recommended);
 }
 
 .rule-number {
@@ -1774,7 +1896,7 @@ button:disabled {
 
 /* the rule that picked the winner */
 .comparison tr.decides th {
-  box-shadow: inset 3px 0 0 var(--brand);
+  box-shadow: inset 3px 0 0 var(--brand-ink);
   font-weight: 700;
   color: var(--ink);
 }
@@ -1905,7 +2027,7 @@ button:disabled {
 .cp-table th {
   position: sticky;
   top: 0;
-  background: #f8fafb;
+  background: var(--surface-2);
   font-weight: 600;
   color: var(--ink-2);
   z-index: 1;
@@ -1945,7 +2067,7 @@ button:disabled {
 }
 
 .map {
-  background: #e8ecef;
+  background: var(--map-bg);
   font-family: inherit;
 }
 
@@ -2013,7 +2135,7 @@ button:disabled {
   z-index: 800;
   width: min(380px, calc(100% - 32px));
   text-align: center;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 26px 26px 24px;
@@ -2038,7 +2160,7 @@ button:disabled {
   top: 14px;
   left: 14px;
   z-index: 800;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
@@ -2072,7 +2194,7 @@ button:disabled {
   transform: translateX(-50%);
   z-index: 800;
   width: min(740px, calc(100% - 28px));
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
@@ -2093,7 +2215,7 @@ button:disabled {
   gap: 8px;
   align-items: center;
   font-weight: 700;
-  color: var(--brand);
+  color: var(--brand-ink);
   font-size: 14px;
 }
 
@@ -2149,7 +2271,7 @@ button:disabled {
   white-space: nowrap;
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
   border-radius: 999px;
   padding: 1px 7px;
@@ -2220,7 +2342,7 @@ button:disabled {
 
 .time-label strong {
   font-size: 15px;
-  color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .legend-row {
@@ -2273,10 +2395,71 @@ button:disabled {
   overflow: hidden;
 }
 
+/* Night mode on the map: darken the street tiles (terrain and satellite stay as they
+   are) and give Leaflet's own white controls the app's surfaces. */
+:root[data-theme="dark"] .tiles-streets {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.7);
+}
+
+:root[data-theme="dark"] .leaflet-bar a,
+:root[data-theme="dark"] .leaflet-control-layers,
+:root[data-theme="dark"] .leaflet-tooltip,
+:root[data-theme="dark"] .leaflet-popup-content-wrapper,
+:root[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .leaflet-bar a {
+  border-bottom-color: var(--line);
+}
+
+:root[data-theme="dark"] .leaflet-bar a:hover {
+  background: var(--surface-2);
+}
+
+:root[data-theme="dark"] .leaflet-bar a.leaflet-disabled {
+  background: var(--surface);
+  color: var(--line-strong);
+}
+
+:root[data-theme="dark"] .leaflet-control-layers-separator {
+  border-top-color: var(--line);
+}
+
+:root[data-theme="dark"] .leaflet-control-layers-toggle {
+  filter: invert(1) brightness(1.4);
+}
+
+:root[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(18, 27, 43, 0.8);
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--brand-500);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-top::before {
+  border-top-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-bottom::before {
+  border-bottom-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-left::before {
+  border-left-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-right::before {
+  border-right-color: var(--surface);
+}
+
 .route-label {
   transform: translate(-50%, -120%);
-  background: #fff;
-  border: 1.5px solid #8796a1;
+  background: var(--surface);
+  border: 1.5px solid var(--route-label-line);
   border-radius: 10px;
   padding: 5px 10px;
   font-size: 11.5px;
@@ -2288,7 +2471,7 @@ button:disabled {
 }
 
 .route-label .rest-note {
-  color: #9a4a06;
+  color: var(--rest-note);
   font-weight: 700;
 }
 
@@ -2298,7 +2481,7 @@ button:disabled {
 }
 
 .route-label.selected {
-  border-color: var(--brand);
+  border-color: var(--brand-ink);
   box-shadow:
     0 0 0 2px rgba(10, 35, 66, 0.15),
     var(--shadow);
@@ -2332,16 +2515,16 @@ button:disabled {
   height: 34px;
   display: grid;
   place-items: center;
-  background: #fff;
-  color: var(--brand);
+  background: var(--surface);
+  color: var(--brand-ink);
   border-radius: 50%;
-  border: 2px solid var(--brand);
+  border: 2px solid var(--brand-ink);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
 .eta-tag {
   transform: translate(10px, -50%);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--surface-glass);
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   padding: 1px 6px;

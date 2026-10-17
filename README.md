@@ -10,11 +10,13 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 
 ## Using the planner
 
-1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows; pick a preset like **Now** or **Tomorrow 6 AM**, a day in the 14-day forecast window and a time, or just type one such as `7:30 pm`), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
+1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows; pick a preset like **Now** or **Tomorrow 6 AM**, a day and a time, or just type one such as `7:30 pm`. The calendar pages through every future month, but only days the weather forecast reaches, about 16 days ahead, can be picked; later days stay greyed out until the forecast covers them), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
 2. **Read the answer.** The form folds into a one-line trip summary (*Edit trip* brings it back). Below it, the **recommended route** card gives the route, its door-to-door time, the reason in one sentence, and its distance, arrival time and Severe / High miles.
 3. **See why.** *How the routes compare* puts the three routes side by side. The rows are the ranking rules in the brief's order; the best value in each row is bold, and the rule that decided is marked on the left. Under that: distance, arrival, stops, the worst weather on the route, and its miles by risk level.
 4. **Check the road.** The map shows all three routes coloured by risk, every checkpoint with its arrival time (hover for the weather there), and the selected route's checkpoint table. Click a route in the table or on the map to select it.
 5. **Look ahead.** The heatmap shows risk, wind, rain or snow along the corridor for each hour from departure to +48 h. The 🚚 marker shows where the truck would be at that hour; the blue mark on the slider is the arrival time.
+
+**Day and night mode.** The sun / moon button in the header switches between a light day theme and a dark night theme, which is easier on the eyes in a cab at night. On a first visit the site follows the device's light or dark setting; once you pick one, the browser remembers it. At night the street map is darkened too (terrain and satellite stay as they are), and the risk colours don't change.
 
 ## Requirements at a glance
 
@@ -110,9 +112,9 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (127) | `cd backend && python manage.py test routing` |
+| Backend tests (129) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (52, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (61, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.
@@ -164,7 +166,7 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 | `GET /api/tiles/<style>/<z>/<x>/<y>` | Map tiles, fetched by the server (`streets`, `terrain`, `satellite`, `labels`). The map loads tiles straight from the tile servers and only uses this for a tile that fails |
 | `GET /api/health` | Health check |
 
-`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks, include_heatmap}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to 14 days ahead; `interval_miles` is 10, 25 or 50. The response has:
+`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks, include_heatmap}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to the last forecast hour (the end of the 16th day, UTC, today included); `interval_miles` is 10, 25 or 50. The response has:
 
 - `routes`: each with its checkpoints (mile, ETA, weather, risk level and reasons), `risk_miles`, `avg_risk`, `rank`, door-to-door `duration_hours` and `driving_hours`, `stops` and `stop_timeline` (where and when each break and rest happens), `extra_rests` (10 h rests beyond what the route with the fewest needs) and `rank_keys` (the exact values it was ranked on);
 - `recommended_route_id`, `recommendation_reason` and `ranking` (the criteria in order and `decided_by`, the one that picked the winner);
@@ -183,16 +185,18 @@ backend/routing/
   tests/             backend tests (outside services mocked)
 frontend/src/
   pages/             Home, Planner, About
-  components/        trip form, place search, recommendation card, route comparison,
-                     checkpoint table, home page illustration
+  layout/            site header (with the day / night switch) and footer
+  components/        trip form, place search, departure calendar, recommendation card,
+                     route comparison, checkpoint table, home page illustration
   map/               map panel, routes, heatmap drawing + controls (ETA mark), wind arrows,
                      truck marker
+  theme.ts           day / night mode: picks, saves and applies the theme
   risk.ts, api.ts, types.ts, *.test.ts(x)
 ```
 
 ## Limitations
 - **Truck restrictions:** weight limits are respected; height and hazmat aren't modelled, since the form doesn't ask for them.
 - **Free-tier quotas:** openrouteservice's free plan allows 2,000 route requests a day and 40 a minute. A new plan uses about 5–15 (the main route plus the detours tried for routes B and C); repeats are cached for 6 h. When the quota runs out, plans use car routes and say so, and truck routes come back by themselves when it renews. The free weather API allows ~600 locations a minute per server IP, and on shared hosting such as Vercel other apps use the same IP. A plan that hits the limit waits for it to lift: one request probes every 5 s, so the plan carries on within seconds of the limit resetting (at most ~75 s). The page says why it's waiting. A coast-to-coast trip at 10-mile spacing always needs more than one minute's quota.
-- **Forecast range:** forecasts end after 16 days. Checkpoints beyond that show as **Unknown** and are left out of the average risk, with a warning.
+- **Forecast range:** forecasts end after 16 days, so that's as far ahead as a departure can be. Checkpoints the truck reaches after the forecast ends show as **Unknown** and are left out of the average risk, with a warning.
 - **Hours of service** cover the two rules that apply within one trip; sleeper-berth splits and weekly limits aren't modelled.
 - The cache is in memory, per process. Use Redis when running several instances.

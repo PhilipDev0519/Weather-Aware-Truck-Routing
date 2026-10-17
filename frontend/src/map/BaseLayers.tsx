@@ -39,7 +39,16 @@ const TILE_EVENTS = Object.fromEntries(
 ) as Record<Style, L.LeafletEventHandlerFnMap>;
 
 function BaseTiles({ style, ...props }: { style: Style; attribution?: string; pane?: string }) {
-  return <TileLayer {...props} url={DIRECT[style]} maxZoom={MAX_ZOOM} eventHandlers={TILE_EVENTS[style]} />;
+  // The class lets night mode darken the street map (see .tiles-streets in styles.css).
+  return (
+    <TileLayer
+      {...props}
+      url={DIRECT[style]}
+      maxZoom={MAX_ZOOM}
+      className={`tiles-${style}`}
+      eventHandlers={TILE_EVENTS[style]}
+    />
+  );
 }
 
 // Streets, terrain and satellite (with place names above the heatmap).

@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from routing import views
 from routing.services import ProviderError
+from routing.services.weather import forecast_end
 
 
 @override_settings(ALLOWED_HOSTS=["testserver"])
@@ -36,6 +37,16 @@ class PlanApiTests(SimpleTestCase):
     def test_rejects_past_departure(self):
         response = self.post(self.payload(departure=(timezone.now() - timedelta(days=1)).isoformat()))
         self.assertEqual(response.status_code, 400)
+
+    def test_accepts_departure_up_to_forecast_end(self):
+        with mock.patch.object(views.planner, "plan_trip", return_value={}):
+            response = self.post(self.payload(departure=(forecast_end() - timedelta(minutes=5)).isoformat()))
+        self.assertEqual(response.status_code, 200)
+
+    def test_rejects_departure_past_forecast_end(self):
+        response = self.post(self.payload(departure=(forecast_end() + timedelta(hours=1)).isoformat()))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("forecast range", response.json()["departure"][0])
 
     def test_rejects_negative_load(self):
         self.assertEqual(self.post(self.payload(load_lbs=-5)).status_code, 400)
