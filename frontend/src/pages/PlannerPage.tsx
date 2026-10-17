@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "../api";
 import { CheckpointTable } from "../components/CheckpointTable";
 import { Icon } from "../components/Icon";
-import { RouteCards } from "../components/RouteCards";
+import { RULE_TEXT, RouteComparison } from "../components/RouteComparison";
 import { TripForm } from "../components/TripForm";
 import { formatTime } from "../format";
 import { MapPanel, type HeatmapState } from "../map/MapPanel";
@@ -19,6 +19,7 @@ export function PlannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [heatmap, setHeatmap] = useState<HeatmapState>(NO_HEATMAP);
   const [selectedId, setSelectedId] = useState("");
+  const [editing, setEditing] = useState(false);
   const [focus, setFocus] = useState<{ routeName: string; cp: Checkpoint } | null>(null);
   const inflight = useRef<AbortController>();
 
@@ -45,6 +46,7 @@ export function PlannerPage() {
     setPlan(result);
     setSelectedId(result.recommended_route_id);
     setLoading(false);
+    setEditing(false);
 
     // Routes first, then the heatmap for their corridor.
     if (result.heatmap || result.heatmap_error) {
@@ -73,7 +75,9 @@ export function PlannerPage() {
   return (
     <div className="planner">
       <aside className="planner-sidebar">
-        <section className="panel">
+        {plan && !editing && <TripSummary plan={plan} onEdit={() => setEditing(true)} />}
+        {/* kept mounted while collapsed, so "Edit trip" brings back what was entered */}
+        <section className="panel" hidden={!!plan && !editing}>
           <div className="panel-head">
             <h1>Plan a trip</h1>
             <p>Enter your trip details. We'll compare routes against the forecast at your ETA.</p>
@@ -102,30 +106,12 @@ export function PlannerPage() {
                 <div className="rec-label">Recommended</div>
                 <div className="rec-title">Route {plan.recommended_route_id}</div>
                 <p>{plan.recommendation_reason}</p>
+                {plan.ranking.decided_by && (
+                  <p className="rec-rule">
+                    <Icon name="check" size={13} /> Decided by {RULE_TEXT[plan.ranking.decided_by]}
+                  </p>
+                )}
               </div>
-            </div>
-            <div className="trip-meta">
-              <span>
-                <Icon name="calendar" size={14} /> {formatTime(plan.departure)}
-              </span>
-              <span>
-                <Icon name="package" size={14} /> {plan.load_lbs.toLocaleString()} lb
-              </span>
-              <span>
-                <Icon name="pin" size={14} /> every {plan.interval_miles} mi
-              </span>
-              <span
-                title={
-                  plan.routing.profile === "truck"
-                    ? "Roads from openrouteservice's truck profile (avoids lower weight limits); times from US road speeds capped at 65 mph"
-                    : "Truck routing unavailable: OSRM car routes with speeds capped at 65 mph"
-                }
-              >
-                <Icon name="truck" size={14} />{" "}
-                {plan.routing.profile === "truck"
-                  ? `Truck routes · ${plan.routing.gross_lbs?.toLocaleString()} lb gross`
-                  : "Car routes, truck speeds"}
-              </span>
             </div>
 
             {plan.warnings.map((w) => (
@@ -135,23 +121,18 @@ export function PlannerPage() {
               </div>
             ))}
 
-            <h2 className="results-title">Route options</h2>
-            <RouteCards routes={plan.routes} selectedId={selectedId} onSelect={onSelect} />
+            <div className="results-head">
+              <h2 className="results-title">Compare the routes</h2>
+              <span className="muted small">Rules apply top to bottom, as in the brief</span>
+            </div>
+            <RouteComparison routes={plan.routes} ranking={plan.ranking} selectedId={selectedId} onSelect={onSelect} />
+
             {selected && <CheckpointTable route={selected} onFocus={onFocus} />}
 
-            <details className="rules-note">
-              <summary>How routes are ranked</summary>
-              <ol>
-                <li>Fewest Severe miles (No Travel miles are counted first, as the worst)</li>
-                <li>Fewest High miles</li>
-                <li>Lowest average risk (distance-weighted, Low = 0 … No Travel = 4)</li>
-                <li>Shortest travel time</li>
-              </ol>
-              <p className="muted small">
-                Each checkpoint uses the forecast for the hour the truck is expected to reach it, and represents the
-                road halfway to its neighbours.
-              </p>
-            </details>
+            <p className="method-note muted small">
+              Each checkpoint uses the forecast for the hour the truck is expected to reach it, required stops included,
+              and stands for the road halfway to its neighbours.
+            </p>
           </section>
         )}
       </aside>
@@ -170,6 +151,49 @@ export function PlannerPage() {
         )}
       </main>
     </div>
+  );
+}
+
+const placeName = (label: string) => label.split(",")[0];
+
+// What was entered, on one card, once there are results to look at.
+function TripSummary({ plan, onEdit }: { plan: PlanResponse; onEdit: () => void }) {
+  const truck = plan.routing.profile === "truck";
+  return (
+    <section className="trip-summary">
+      <div className="trip-summary-head">
+        <h1>
+          {placeName(plan.origin.label)} <Icon name="arrowRight" size={16} /> {placeName(plan.destination.label)}
+        </h1>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onEdit}>
+          Edit trip
+        </button>
+      </div>
+      <div className="trip-meta">
+        <span>
+          <Icon name="calendar" size={14} /> Leaves {formatTime(plan.departure)}
+        </span>
+        <span>
+          <Icon name="package" size={14} /> {plan.load_lbs.toLocaleString()} lb load
+        </span>
+        <span>
+          <Icon name="pin" size={14} /> Weather every {plan.interval_miles} mi
+        </span>
+        <span>
+          <Icon name="clock" size={14} /> {plan.rest_breaks ? "Rest stops included" : "No rest stops"}
+        </span>
+        <span
+          title={
+            truck
+              ? "Roads from openrouteservice's truck profile (avoids lower weight limits); times from US road speeds capped at 65 mph"
+              : "Truck routing unavailable: OSRM car routes with speeds capped at 65 mph"
+          }
+        >
+          <Icon name="truck" size={14} />{" "}
+          {truck ? `Truck routes · ${plan.routing.gross_lbs?.toLocaleString()} lb gross` : "Car routes, truck speeds"}
+        </span>
+      </div>
+    </section>
   );
 }
 

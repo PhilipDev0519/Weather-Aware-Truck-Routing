@@ -135,6 +135,9 @@ def plan_trip(
         result["rank"] = rank
     best = ranked[0]
     best["recommended"] = True
+    runner_up = ranked[1] if len(ranked) > 1 else None
+    for result in results:
+        result["rank_keys"] = recommend.rank_keys(result)
 
     warnings.extend(_extra_rest_warnings(results))
     if any(r["risk_miles"]["unknown"] > 0 for r in results):
@@ -153,7 +156,9 @@ def plan_trip(
         "rest_breaks": rest_breaks,
         "routes": results,
         "recommended_route_id": best["id"],
-        "recommendation_reason": recommend.explain(best, ranked[1] if len(ranked) > 1 else None),
+        "recommendation_reason": recommend.explain(best, runner_up),
+        # the ranking criteria in order, and which one picked the winner
+        "ranking": recommend.ranking_summary(best, runner_up),
         "warnings": warnings,
         "routing": {"profile": options.profile, "gross_lbs": options.gross_lbs},
         "heatmap": heatmap,

@@ -135,6 +135,14 @@ class PlanTripTests(SimpleTestCase):
         self.assertEqual([r["extra_rests"] for r in result["routes"]], [0, 0])
         self.assertFalse(any("rest" in w for w in result["warnings"]))
 
+    def test_plan_says_which_criterion_decided(self):
+        fast_windy = straight_route(100, 2, start=(35.0, -90.0))
+        slow_calm = straight_route(120, 3, start=(35.0, -89.0))
+        result = self.plan([fast_windy, slow_calm], [constant_forecast(wind=48), constant_forecast(wind=5)])
+        self.assertEqual(result["ranking"]["decided_by"], "severe")
+        keys = {r["id"]: r["rank_keys"]["severe"] for r in result["routes"]}
+        self.assertEqual(keys, {"A": 100.0, "B": 0.0})
+
     def test_missing_forecast_is_unknown(self):
         result = self.plan([straight_route(100, 2)], [None])
         route = result["routes"][0]

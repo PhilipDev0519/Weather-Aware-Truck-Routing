@@ -53,6 +53,7 @@ export interface RouteOption {
   stops: { breaks: number; rests: number };
   extra_rests: number; // 10 h rests beyond what the route with the fewest needs
   stop_timeline: Stop[]; // required breaks and rests, in order
+  rank_keys: Record<CriterionId, number>; // the exact (rounded) values the server ranked on
   arrival: string;
   risk_miles: RiskMiles;
   avg_risk: number;
@@ -60,6 +61,13 @@ export interface RouteOption {
   checkpoints: Checkpoint[];
   segments: RouteSegment[];
   geometry: LatLng[]; // filled in by the API client from `segments`
+}
+
+export type CriterionId = "no_travel" | "severe" | "high" | "avg_risk" | "travel_time";
+
+export interface Ranking {
+  criteria: { id: CriterionId; label: string }[]; // in ranking order
+  decided_by: CriterionId | null; // first criterion that separates the winner from the runner-up
 }
 
 export interface Stop {
@@ -88,6 +96,7 @@ export interface PlanResponse {
   routes: RouteOption[];
   recommended_route_id: string;
   recommendation_reason: string;
+  ranking: Ranking;
   warnings: string[];
   // "truck": openrouteservice's HGV profile; "car": OSRM capped at truck speed
   routing: { profile: "truck" | "car"; gross_lbs: number | null };
