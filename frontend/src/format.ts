@@ -24,10 +24,48 @@ export const formatClock = (iso: string | Date) =>
 export const formatMiles = (miles: number) =>
   `${miles.toLocaleString(undefined, { maximumFractionDigits: miles < 10 ? 1 : 0 })} mi`;
 
-// Value format for <input type="datetime-local">, in local time.
+// "YYYY-MM-DDTHH:mm" in local time (the departure value; `new Date()` reads it back as local).
 export function toLocalInput(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const timeOfDayFormat = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+
+// "9:45 PM" (or "21:45", by locale)
+export const formatTimeOfDay = (date: Date) => timeOfDayFormat.format(date);
+
+// How far off a departure is: "now", "in 40 min", "in 3 h 15 min", "in 2 days 4 h", "2 h ago".
+export function formatRelative(target: Date, now: Date): string {
+  const minutes = Math.round((target.getTime() - now.getTime()) / 60_000);
+  const abs = Math.abs(minutes);
+  if (abs < 1) return "now";
+  const days = Math.floor(abs / 1440);
+  const hours = Math.floor((abs % 1440) / 60);
+  const mins = abs % 60;
+  const parts = days
+    ? [`${days} day${days > 1 ? "s" : ""}`, hours && `${hours} h`]
+    : [hours && `${hours} h`, mins && `${mins} min`];
+  const text = parts.filter(Boolean).join(" ");
+  return minutes > 0 ? `in ${text}` : `${text} ago`;
+}
+
+// Typed time to minutes after midnight: "7:30 pm", "7.30pm", "730p", "19:30", "1930", "7pm", "7". Null if unreadable.
+export function parseTime(text: string): number | null {
+  const m = text
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .match(/^(\d{1,2})(?:[:.h]?(\d{2}))?(a|p|am|pm)?$/);
+  if (!m) return null;
+  let hours = Number(m[1]);
+  const minutes = m[2] ? Number(m[2]) : 0;
+  if (minutes > 59) return null;
+  if (m[3]) {
+    if (hours < 1 || hours > 12) return null;
+    hours = (hours % 12) + (m[3].startsWith("p") ? 12 : 0);
+  } else if (hours > 23) return null;
+  return hours * 60 + minutes;
 }
 
 // Rounds down, so 0.496 shows as "0.49" and not "0.50" (which would look Moderate).

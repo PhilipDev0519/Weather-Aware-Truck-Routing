@@ -10,7 +10,7 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 
 ## Using the planner
 
-1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
+1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows; pick a preset like **Now** or **Tomorrow 6 AM**, a day in the 14-day forecast window and a time, or just type one such as `7:30 pm`), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
 2. **Read the answer.** The form folds into a one-line trip summary (*Edit trip* brings it back). Below it, the **recommended route** card gives the route, its door-to-door time, the reason in one sentence, and its distance, arrival time and Severe / High miles.
 3. **See why.** *How the routes compare* puts the three routes side by side. The rows are the ranking rules in the brief's order; the best value in each row is bold, and the rule that decided is marked on the left. Under that: distance, arrival, stops, the worst weather on the route, and its miles by risk level.
 4. **Check the road.** The map shows all three routes coloured by risk, every checkpoint with its arrival time (hover for the weather there), and the selected route's checkpoint table. Click a route in the table or on the map to select it.
@@ -20,7 +20,7 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 
 | Requirement | Code | Tests |
 |---|---|---|
-| Origin, destination, departure, load weight | `TripForm.tsx`, `serializers.py` | `TripForm.test.tsx`, `test_api.py` |
+| Origin, destination, departure, load weight | `TripForm.tsx`, `DepartureInput.tsx`, `serializers.py` | `TripForm.test.tsx`, `format.test.ts`, `test_api.py` |
 | 3 route options from a routing API | `route_options.py`, `services/ors.py`, `services/osrm.py` | `test_route_options.py`, `test_ors.py` |
 | Weather every 10 / 25 / 50 mi at the truck's ETA | `planner.py`, `services/weather.py` | `test_planner.py`, `test_weather.py` |
 | Risk thresholds and load rules | `risk.py` (mirrored in `risk.ts` for the map) | `test_risk.py`, `risk.test.ts` |

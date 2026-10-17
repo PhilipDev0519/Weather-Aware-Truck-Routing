@@ -1051,8 +1051,7 @@ button:disabled {
     box-shadow 0.15s;
 }
 
-.field input[type="number"],
-.field input[type="datetime-local"] {
+.field input[type="number"] {
   padding-right: 10px;
 }
 
@@ -1130,6 +1129,280 @@ button:disabled {
 .suggestions li:hover,
 .suggestions li.active {
   background: var(--brand-soft);
+}
+
+/* Departure picker: a trigger shaped like the inputs, and a popover like the suggestions list */
+.dt {
+  position: relative;
+}
+
+.dt-trigger {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font-size: 14.5px;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.dt-trigger:hover {
+  border-color: #b7c5ce;
+}
+
+.dt-trigger:focus-visible,
+.dt-trigger.open {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15);
+}
+
+.dt-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dt-rel {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-500);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dt-rel.past {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.dt-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.dt-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-btn.on {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.dt-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 12px;
+}
+
+.dt-cal-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 2px 6px;
+  font-size: 14px;
+}
+
+.dt-cal-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dt-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.dt-week + .dt-week {
+  margin-top: 2px;
+}
+
+.dt-wd {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dt-day {
+  position: relative;
+  width: 100%;
+  height: 38px;
+  display: grid;
+  place-content: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.dt-day small {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dt-day:hover:not(:disabled) {
+  background: var(--brand-soft);
+}
+
+.dt-day:disabled {
+  opacity: 1;
+  color: var(--line-strong);
+  cursor: default;
+}
+
+.dt-day:disabled small {
+  color: inherit;
+}
+
+.dt-day.today::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--flag-red);
+}
+
+.dt-day.on {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+.dt-day.on small {
+  color: #fff;
+}
+
+.dt-day.on.today::after {
+  background: #fff;
+}
+
+.dt-time {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+}
+
+.dt-time-label {
+  margin: 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field input.dt-time-input {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+}
+
+.field input.dt-time-input.bad {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.12);
+}
+
+.dt-slots {
+  position: relative; /* so a slot's offsetTop is measured from the list */
+  max-height: 176px;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+.dt-slot {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dt-slot:hover {
+  background: var(--brand-soft);
+}
+
+.dt-slot.on {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dt-empty {
+  padding: 6px 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.dt-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .dt-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dt-slots {
+    max-height: 132px;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
 }
 
 .segmented {

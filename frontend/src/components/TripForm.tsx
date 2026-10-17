@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toLocalInput } from "../format";
 import type { PlanRequest, Place } from "../types";
+import { DepartureInput } from "./DepartureInput";
 import { Icon } from "./Icon";
 import { PlaceInput } from "./PlaceInput";
 
@@ -65,6 +66,7 @@ export function TripForm({ loading, onSubmit }: Props) {
     };
     if (!req.origin.label.trim() || !req.destination.label.trim()) return fail("Enter an origin and a destination.");
     if (Number.isNaN(when.getTime())) return fail("Enter a valid departure date and time.");
+    if (when.getTime() < Date.now() - 3_600_000) return fail("The departure time has passed. Pick a new one.");
     if (!load.trim() || !Number.isFinite(loadLbs) || loadLbs < 0)
       return fail("Enter the load weight in pounds (0 or more).");
     if (loadLbs > MAX_LOAD_LBS) return fail(`Load weight can be at most ${MAX_LOAD_LBS.toLocaleString()} lb.`);
@@ -106,18 +108,7 @@ export function TripForm({ loading, onSubmit }: Props) {
         <label htmlFor="departure">
           Departure <span className="label-hint">· your time zone ({LOCAL_ZONE})</span>
         </label>
-        <div className="input-wrap">
-          <Icon name="calendar" size={17} className="input-icon" />
-          <input
-            id="departure"
-            type="datetime-local"
-            value={departure}
-            min={toLocalInput(now)}
-            max={toLocalInput(max)}
-            onChange={(e) => setDeparture(e.target.value)}
-            required
-          />
-        </div>
+        <DepartureInput id="departure" value={departure} onChange={setDeparture} min={now} max={max} />
       </div>
       <div className="row">
         <div className="field">
