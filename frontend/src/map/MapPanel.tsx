@@ -78,7 +78,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
         <BaseLayers />
         <Pane name="heatmap" style={{ zIndex: 350 }}>
           {heatmap.data && visible && frameUrl && (
-            <ImageOverlay url={frameUrl(frame)}bounds={heatmap.data.bounds} className="heatmap-image" />
+            <ImageOverlay url={frameUrl(frame)} bounds={heatmap.data.bounds} className="heatmap-image" />
           )}
         </Pane>
         {/* above the heatmap and labels, below the routes */}

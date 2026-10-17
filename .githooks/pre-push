@@ -1,0 +1,33 @@
+#!/bin/sh
+# Runs the same checks as CI (.github/workflows/ci.yml) before anything is pushed,
+# so a push can't turn main red. Enable once per clone:
+#   git config core.hooksPath .githooks
+# Skip in an emergency with: git push --no-verify
+set -e
+
+root=$(git rev-parse --show-toplevel)
+
+if [ -x "$root/backend/.venv/Scripts/python.exe" ]; then
+  py="$root/backend/.venv/Scripts/python.exe"
+elif [ -x "$root/backend/.venv/bin/python" ]; then
+  py="$root/backend/.venv/bin/python"
+else
+  py=python
+fi
+
+echo "pre-push: backend checks"
+cd "$root/backend"
+"$py" -m ruff check .
+"$py" -m ruff format --check .
+"$py" manage.py check
+"$py" manage.py test routing
+
+echo "pre-push: frontend checks"
+cd "$root/frontend"
+npm run --silent lint
+npx prettier --check src
+npm run --silent typecheck
+npm test --silent
+npm run --silent build
+
+echo "pre-push: all checks passed"

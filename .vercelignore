@@ -6,6 +6,7 @@ backend/staticfiles
 backend/routing/tests
 frontend/dist
 .github
+.githooks
 docs
 Dockerfile
 render.yaml
