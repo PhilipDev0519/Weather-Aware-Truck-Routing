@@ -54,18 +54,21 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
   const frameUrl = useMemo(() => (grid ? frameRenderer(grid, layer, loadLbs) : null), [grid, layer, loadLbs]);
   usePrerender(frameUrl, heatmap.data?.hours ?? 0);
   const selected = plan?.routes.find((r) => r.id === selectedId) ?? null;
-  const truck = useTruck(selected, plan?.departure, heatmap.data?.start, hour);
-  // Same clock as the slider: hours after the heatmap's hour 0 (departure, rounded down).
+  // The slider counts hours after the departure itself; the heatmap's frames
+  // start on the hour before it, so each slider hour shows the nearest frame.
+  const frame = heatmap.data ? forecastFrame(heatmap.data, plan?.departure, hour) : hour;
+  const truck = useTruck(selected, plan?.departure, hour);
+  // Same clock as the slider: hours after departure.
   const arrival = useMemo(
     () =>
-      selected && heatmap.data
+      selected && plan
         ? {
             routeName: selected.name,
             time: selected.arrival,
-            hours: (new Date(selected.arrival).getTime() - new Date(heatmap.data.start).getTime()) / 3_600_000,
+            hours: (new Date(selected.arrival).getTime() - new Date(plan.departure).getTime()) / 3_600_000,
           }
         : null,
-    [selected, heatmap.data],
+    [selected, plan],
   );
 
   return (
@@ -75,13 +78,13 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
         <BaseLayers />
         <Pane name="heatmap" style={{ zIndex: 350 }}>
           {heatmap.data && visible && frameUrl && (
-            <ImageOverlay url={frameUrl(hour)} bounds={heatmap.data.bounds} className="heatmap-image" />
+            <ImageOverlay url={frameUrl(frame)}bounds={heatmap.data.bounds} className="heatmap-image" />
           )}
         </Pane>
         {/* above the heatmap and labels, below the routes */}
         <Pane name="arrows" style={{ zIndex: 380, pointerEvents: "none" }}>
           {heatmap.data && visible && (layer === "risk" || layer === "wind") && (
-            <WindArrows data={heatmap.data} hour={hour} />
+            <WindArrows data={heatmap.data} hour={frame} />
           )}
         </Pane>
         {plan && <RoutesLayer plan={plan} selectedId={selectedId} onSelect={onSelect} />}
@@ -100,6 +103,8 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
           loading={heatmap.loading}
           error={heatmap.error}
           hour={hour}
+          frame={frame}
+          departure={plan.departure}
           onHour={(h) => {
             setPlaying(false);
             setHour(h);
@@ -118,4 +123,10 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
       )}
     </div>
   );
+}
+
+// The heatmap frame nearest to `hour` hours after departure.
+export function forecastFrame(data: HeatmapResponse, departure: string | undefined, hour: number): number {
+  const offset = departure ? (new Date(departure).getTime() - new Date(data.start).getTime()) / 3_600_000 : 0;
+  return Math.min(data.hours, Math.max(0, Math.round(hour + offset)));
 }

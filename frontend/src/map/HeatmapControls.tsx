@@ -4,7 +4,7 @@ import { LEVELS, assess, bandRange } from "../risk";
 import type { HeatLayer, HeatmapResponse, RiskLevel } from "../types";
 import type { HeatGrid } from "./heatmapFrames";
 
-// The selected route's arrival, in hours after the slider's hour 0.
+// The selected route's arrival, in hours after departure (the slider's hour 0).
 export interface Arrival {
   routeName: string;
   time: string; // ISO
@@ -29,7 +29,9 @@ interface Props {
   grid: HeatGrid | null;
   loading: boolean;
   error: string | null;
-  hour: number;
+  hour: number; // after departure
+  frame: number; // the heatmap frame shown for that hour
+  departure: string; // ISO
   onHour: (hour: number) => void;
   layer: HeatLayer;
   onLayer: (layer: HeatLayer) => void;
@@ -44,11 +46,11 @@ interface Props {
 }
 
 export function HeatmapControls(props: Props) {
-  const { data, grid, loading, error, hour, layer, visible, playing, probe } = props;
+  const { data, grid, loading, error, hour, frame, layer, visible, playing, probe } = props;
   const maxHour = data?.hours ?? 48;
-  const time = data ? new Date(new Date(data.start).getTime() + hour * 3_600_000) : null;
+  const time = data ? new Date(new Date(props.departure).getTime() + hour * 3_600_000) : null;
   // Departures far ahead run past the end of the forecast; those hours are empty.
-  const noForecast = data ? data.frames.risk[hour].every((value) => value === null) : false;
+  const noForecast = data ? data.frames.risk[frame].every((value) => value === null) : false;
 
   return (
     <div className="heat-controls">
@@ -121,7 +123,7 @@ export function HeatmapControls(props: Props) {
       {data && grid && (
         <div className="heat-row legend-row">
           <HeatLegend data={data} layer={layer} loadLbs={props.loadLbs} />
-          <ProbeReadout grid={grid} hour={hour} probe={probe} loadLbs={props.loadLbs} />
+          <ProbeReadout grid={grid} hour={frame} probe={probe} loadLbs={props.loadLbs} />
         </div>
       )}
     </div>

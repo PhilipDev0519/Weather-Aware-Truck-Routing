@@ -2,9 +2,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatTime } from "../format";
 import type { HeatmapResponse, Rules } from "../types";
 import { HeatmapControls } from "./HeatmapControls";
 import { HeatGrid } from "./heatmapFrames";
+import { forecastFrame } from "./MapPanel";
 
 afterEach(cleanup);
 
@@ -50,6 +52,8 @@ function setup(overrides: Partial<Parameters<typeof HeatmapControls>[0]> = {}) {
     loading: false,
     error: null,
     hour: 0,
+    frame: 0,
+    departure: "2026-01-10T12:40:00+00:00",
     onHour: vi.fn(),
     layer: "risk" as const,
     onLayer: vi.fn(),
@@ -116,6 +120,13 @@ describe("HeatmapControls", () => {
     expect(screen.getByText("+6h")).toBeTruthy();
   });
 
+  it("shows the forecast hour nearest to each hour after departure", () => {
+    expect(forecastFrame(data, "2026-01-10T12:20:00+00:00", 0)).toBe(0); // 12:20 -> the 12:00 frame
+    expect(forecastFrame(data, "2026-01-10T12:40:00+00:00", 0)).toBe(1); // 12:40 -> the 13:00 frame
+    expect(forecastFrame(data, "2026-01-10T12:40:00+00:00", 10)).toBe(11);
+    expect(forecastFrame(data, "2026-01-10T12:40:00+00:00", 48)).toBe(48); // the last frame there is
+  });
+
   it("switches layers and plays", async () => {
     const props = setup();
     await userEvent.click(screen.getByRole("radio", { name: "Snow" }));
@@ -138,8 +149,13 @@ describe("HeatmapControls", () => {
     expect(readout.querySelector("strong")?.textContent).toBe("Severe");
   });
 
+  it("counts the hours from the departure, not from the forecast's first hour", () => {
+    setup({ hour: 2, frame: 3 });
+    expect(screen.getByText("+2h").nextElementSibling?.textContent).toBe(formatTime("2026-01-10T14:40:00+00:00"));
+  });
+
   it("says when the slider is past the end of the forecast", () => {
-    setup({ hour: 45 });
+    setup({ hour: 45, frame: 45 });
     expect(screen.getByText("No forecast this far ahead")).toBeTruthy();
   });
 });
