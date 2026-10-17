@@ -5,6 +5,11 @@ import { Icon } from "./Icon";
 import { PlaceInput } from "./PlaceInput";
 
 const INTERVALS = [10, 25, 50] as const;
+// The departure box is in the browser's time zone, like every time the app shows.
+const LOCAL_ZONE =
+  new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+    .formatToParts(new Date())
+    .find((p) => p.type === "timeZoneName")?.value ?? "local";
 const MAX_DAYS_AHEAD = 14;
 const MAX_LOAD_LBS = 150_000; // same limit as the API
 
@@ -98,7 +103,9 @@ export function TripForm({ loading, onSubmit }: Props) {
       />
 
       <div className="field">
-        <label htmlFor="departure">Departure</label>
+        <label htmlFor="departure">
+          Departure <span className="label-hint">· your time zone ({LOCAL_ZONE})</span>
+        </label>
         <div className="input-wrap">
           <Icon name="calendar" size={17} className="input-icon" />
           <input

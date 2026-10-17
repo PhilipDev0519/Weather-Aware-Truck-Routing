@@ -52,6 +52,7 @@ export interface RouteOption {
   driving_hours: number;
   stops: { breaks: number; rests: number };
   extra_rests: number; // 10 h rests beyond what the route with the fewest needs
+  stop_timeline: Stop[]; // required breaks and rests, in order
   arrival: string;
   risk_miles: RiskMiles;
   avg_risk: number;
@@ -59,6 +60,13 @@ export interface RouteOption {
   checkpoints: Checkpoint[];
   segments: RouteSegment[];
   geometry: LatLng[]; // filled in by the API client from `segments`
+}
+
+export interface Stop {
+  kind: "break" | "rest";
+  mile: number;
+  start_hours: number; // after departure
+  hours: number;
 }
 
 export interface PlanRequest {

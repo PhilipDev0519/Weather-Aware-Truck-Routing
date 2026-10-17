@@ -31,6 +31,24 @@ def stops_before(driving_s: float) -> tuple[int, int]:
     return breaks, rests
 
 
+def stop_schedule(driving_s: float) -> list[tuple[str, float, float]]:
+    """Every stop on a drive of this length: (kind, driving time it starts at, length).
+
+    Same rules as stops_before: a 30-minute break once a shift has passed
+    8 hours of driving, and a 10-hour rest at every 11 hours if there's more
+    driving after it.
+    """
+    stops = []
+    shift_start = 0.0
+    while True:
+        if driving_s - shift_start > BREAK_AFTER_S:
+            stops.append(("break", shift_start + BREAK_AFTER_S, BREAK_S))
+        if driving_s - shift_start <= SHIFT_DRIVING_S:
+            return stops
+        shift_start += SHIFT_DRIVING_S
+        stops.append(("rest", shift_start, REST_S))
+
+
 def clock_time(driving_s: float) -> float:
     """Elapsed time once the required stops are added."""
     breaks, rests = stops_before(driving_s)

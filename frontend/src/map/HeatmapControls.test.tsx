@@ -74,6 +74,12 @@ describe("HeatmapControls", () => {
     expect(props.onHour).toHaveBeenCalledWith(36);
   });
 
+  it("says where the truck is, and that the forecast can outlast the trip", () => {
+    setup({ truckStatus: "Route A arrived Sat 6:08 AM" });
+    expect(screen.getByText(/Route A arrived Sat 6:08 AM/)).toBeTruthy();
+    expect(screen.getByText(/0–48 h forecast, which can outlast the trip/)).toBeTruthy();
+  });
+
   it("shows the hour as an offset and as a clock time", () => {
     setup({ hour: 6 });
     expect(screen.getByText("+6h")).toBeTruthy();

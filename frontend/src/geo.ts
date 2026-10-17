@@ -1,4 +1,4 @@
-import type { Checkpoint, LatLng } from "./types";
+import type { Checkpoint, LatLng, Stop } from "./types";
 
 const EARTH_RADIUS_MI = 3958.8;
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -12,15 +12,26 @@ export function haversineMiles([lat1, lon1]: LatLng, [lat2, lon2]: LatLng): numb
 
 export const mercatorY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + rad(Math.max(-85, Math.min(85, lat))) / 2));
 
+// Where the truck is along a route at a given time. Between checkpoints it
+// moves at a steady pace; during a required break or rest it stays put.
 export class RouteTracker {
   private cum: number[];
   private scale: number;
+  private timeline: { hours: number; mile: number }[];
 
   constructor(
     private geometry: LatLng[],
-    private checkpoints: Checkpoint[],
+    checkpoints: Checkpoint[],
     totalMiles: number,
+    private stops: Stop[] = [],
   ) {
+    this.timeline = [
+      ...checkpoints.map((cp) => ({ hours: cp.hours_from_departure, mile: cp.mile })),
+      ...stops.flatMap((s) => [
+        { hours: s.start_hours, mile: s.mile },
+        { hours: s.start_hours + s.hours, mile: s.mile },
+      ]),
+    ].sort((a, b) => a.hours - b.hours || a.mile - b.mile);
     this.cum = [0];
     for (let i = 1; i < geometry.length; i++)
       this.cum.push(this.cum[i - 1] + haversineMiles(geometry[i - 1], geometry[i]));
@@ -29,18 +40,22 @@ export class RouteTracker {
   }
 
   mileAtHours(hours: number): number {
-    const cps = this.checkpoints;
+    const points = this.timeline;
     if (hours <= 0) return 0;
-    for (let i = 1; i < cps.length; i++) {
-      const a = cps[i - 1];
-      const b = cps[i];
-      if (hours <= b.hours_from_departure) {
-        const span = b.hours_from_departure - a.hours_from_departure;
-        const t = span > 0 ? (hours - a.hours_from_departure) / span : 1;
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      if (hours <= b.hours) {
+        const span = b.hours - a.hours;
+        const t = span > 0 ? (hours - a.hours) / span : 1;
         return a.mile + (b.mile - a.mile) * t;
       }
     }
-    return cps[cps.length - 1].mile;
+    return points[points.length - 1].mile;
+  }
+
+  stopAt(hours: number): Stop | null {
+    return this.stops.find((s) => hours >= s.start_hours && hours < s.start_hours + s.hours) ?? null;
   }
 
   positionAtMile(mile: number): LatLng {

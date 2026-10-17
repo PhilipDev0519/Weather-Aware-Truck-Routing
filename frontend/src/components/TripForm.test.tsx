@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlanRequest } from "../types";
@@ -7,8 +7,10 @@ import { TripForm } from "./TripForm";
 
 const MEMPHIS = { label: "Memphis, Tennessee, United States", lat: 35.1495, lon: -90.049 };
 
+// Only "Memph…" finds anything, so the origin box never shows a suggestion the
+// test could pick by mistake while its list is closing.
 vi.mock("../api", () => ({
-  api: { geocode: vi.fn(async () => [MEMPHIS]) },
+  api: { geocode: vi.fn(async (query: string) => (query.startsWith("Memph") ? [MEMPHIS] : [])) },
 }));
 
 afterEach(cleanup);
@@ -24,7 +26,8 @@ describe("TripForm", () => {
     const { onSubmit, user } = setup();
     await user.type(screen.getByLabelText("Origin"), "Chicago, IL");
     await user.type(screen.getByLabelText("Destination"), "Memph");
-    await user.click(await screen.findByRole("option", { name: MEMPHIS.label }));
+    const list = await screen.findByRole("listbox");
+    await user.click(within(list).getByRole("option", { name: MEMPHIS.label }));
     await user.clear(screen.getByLabelText("Load weight (lb)"));
     await user.type(screen.getByLabelText("Load weight (lb)"), "42000");
     await user.click(screen.getByRole("radio", { name: "10 mi" }));

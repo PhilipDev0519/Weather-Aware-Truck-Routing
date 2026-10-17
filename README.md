@@ -96,15 +96,15 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 - The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
 - **Routes first.** The heatmap needs about twice as many forecast locations as the checkpoints, so the browser asks for it in a second request (`/api/heatmap`, with the corridor the plan returned) and shows the routes while it loads. When the free weather API is busy, the routes still appear quickly.
 - The browser blends wind, rain and snow between grid points and classifies each pixel with the same rules. Band edges are smooth, every colour is a real risk level, and at grid points it matches the server exactly.
-- Frames are drawn in the background, so the slider and the play button run without delay. A 🚚 marker shows where the truck would be at that hour; hovering shows the conditions under the cursor.
+- Frames are drawn in the background, so the slider and the play button run without delay. A 🚚 marker shows where the truck would be at that hour (it stays put during required breaks and rests), and a line under the slider says whether it's driving, stopped or has arrived. The slider covers the 0–48 h **forecast**, which usually outlasts the trip, so after arrival the truck waits at the destination while the weather plays on. Hovering shows the conditions under the cursor.
 
 ## Checks
 
 | | Command |
 |---|---|
-| Backend tests (116) | `cd backend && python manage.py test routing` |
+| Backend tests (119) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (40, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (42, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.

@@ -31,6 +31,21 @@ describe("RouteTracker", () => {
     expect(tracker.mileAtHours(5)).toBeCloseTo(total);
   });
 
+  it("stays put during a required rest instead of creeping along", () => {
+    // 2 h to the halfway point, a 10 h rest there, then 2 h more.
+    const half = total / 2;
+    const resting = new RouteTracker(line, [checkpoint(0, 0), checkpoint(total, 14)], total, [
+      { kind: "rest", mile: half, start_hours: 2, hours: 10 },
+    ]);
+    expect(resting.mileAtHours(1)).toBeCloseTo(half / 2);
+    expect(resting.mileAtHours(2)).toBeCloseTo(half);
+    expect(resting.mileAtHours(7)).toBeCloseTo(half);
+    expect(resting.mileAtHours(12)).toBeCloseTo(half);
+    expect(resting.mileAtHours(13)).toBeCloseTo(half * 1.5);
+    expect(resting.stopAt(7)?.kind).toBe("rest");
+    expect(resting.stopAt(13)).toBeNull();
+  });
+
   it("finds the position at a mile", () => {
     const [lat, lon] = tracker.positionAtMile(total / 2);
     expect(lat).toBeCloseTo(36, 3);

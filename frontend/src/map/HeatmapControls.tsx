@@ -32,6 +32,7 @@ interface Props {
   onPlaying: (playing: boolean) => void;
   probe: ProbePoint | null;
   loadLbs: number;
+  truckStatus?: string | null; // where the selected route's truck is at this hour
 }
 
 export function HeatmapControls(props: Props) {
@@ -92,6 +93,13 @@ export function HeatmapControls(props: Props) {
           <span>{time ? formatTime(time) : "—"}</span>
         </div>
       </div>
+
+      {props.truckStatus && (
+        <p className="truck-status" aria-live="polite">
+          <Icon name="truck" size={14} /> {props.truckStatus}
+          <span className="muted"> · the slider shows the 0–48 h forecast, which can outlast the trip</span>
+        </p>
+      )}
 
       {data && grid && (
         <div className="heat-row legend-row">

@@ -218,6 +218,8 @@ def _evaluate(
         "driving_hours": round(route.duration_s / 3600, 3),
         "stops": {"breaks": breaks, "rests": rests},
         "arrival": (departure + timedelta(seconds=trip_s)).isoformat(),
+        # where and when the truck stops, so the map can park it there
+        "stop_timeline": _stop_timeline(route) if rest_breaks else [],
         "risk_miles": {k: round(v, 2) for k, v in risk_miles.items()},
         "avg_risk": round(weighted_sum / known_miles, 4) if known_miles else 0.0,
         "max_level": int(max(known)) if known else None,
@@ -225,6 +227,23 @@ def _evaluate(
         # the coloured stretches together make up the whole route line
         "segments": _risk_segments(line, checkpoints, levels),
     }
+
+
+def _stop_timeline(route: Route) -> list[dict]:
+    timeline = []
+    stopped_s = 0.0  # time already spent at earlier stops
+    for kind, driving_s, length_s in hos.stop_schedule(route.duration_s):
+        mile = value_at(route.cum_time_s, route.cum_dist_m, driving_s) / METERS_PER_MILE
+        timeline.append(
+            {
+                "kind": kind,
+                "mile": round(mile, 1),
+                "start_hours": round((driving_s + stopped_s) / 3600, 3),
+                "hours": length_s / 3600,
+            }
+        )
+        stopped_s += length_s
+    return timeline
 
 
 def _extra_rest_warnings(results: list[dict]) -> list[str]:

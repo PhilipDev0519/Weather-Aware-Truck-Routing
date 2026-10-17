@@ -118,6 +118,15 @@ class PlanTripTests(SimpleTestCase):
             ],
         )
 
+    def test_stop_timeline_places_each_stop_on_the_road(self):
+        # 650 mi in 13 h at a steady 50 mph: break at 8 h (mile 400), rest at 11 h (mile 550)
+        result = self.plan([straight_route(650, 13)], [constant_forecast()])
+        timeline = result["routes"][0]["stop_timeline"]
+        self.assertEqual(
+            [(s["kind"], s["mile"], s["start_hours"], s["hours"]) for s in timeline],
+            [("break", 400.0, 8.0, 0.5), ("rest", 550.0, 11.5, 10.0)],  # the rest starts after the break
+        )
+
     def test_no_rest_warning_when_routes_need_the_same_stops(self):
         result = self.plan(
             [straight_route(500, 10.5, start=(35.0, -90.0)), straight_route(520, 10.8, start=(35.0, -89.0))],

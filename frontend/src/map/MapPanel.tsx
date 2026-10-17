@@ -9,7 +9,7 @@ import { HeatmapProbe } from "./HeatmapProbe";
 import { FitToPlan, FocusPopup } from "./MapFocus";
 import { RiskLegend } from "./RiskLegend";
 import { RoutesLayer } from "./RoutesLayer";
-import { TruckMarker } from "./TruckMarker";
+import { TruckMarker, useTruck } from "./TruckMarker";
 import { usePrerender } from "./usePrerender";
 import { WindArrows } from "./WindArrows";
 
@@ -54,6 +54,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
   const frameUrl = useMemo(() => (grid ? frameRenderer(grid, layer, loadLbs) : null), [grid, layer, loadLbs]);
   usePrerender(frameUrl, heatmap.data?.hours ?? 0);
   const selected = plan?.routes.find((r) => r.id === selectedId) ?? null;
+  const truck = useTruck(selected, plan?.departure, heatmap.data?.start, hour);
 
   return (
     <div className="map-panel">
@@ -73,9 +74,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
         </Pane>
         {plan && <RoutesLayer plan={plan} selectedId={selectedId} onSelect={onSelect} />}
         {plan && <FitToPlan plan={plan} />}
-        {selected && heatmap.data && plan && (
-          <TruckMarker route={selected} departure={plan.departure} heatStart={heatmap.data.start} hour={hour} />
-        )}
+        {truck && <TruckMarker truck={truck} />}
         {heatmap.data && <HeatmapProbe data={heatmap.data} onProbe={setProbe} />}
         {focus && <FocusPopup focus={focus} />}
       </MapContainer>
@@ -101,6 +100,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
           onPlaying={setPlaying}
           probe={probe}
           loadLbs={plan.load_lbs}
+          truckStatus={truck?.status ?? null}
         />
       )}
     </div>
