@@ -90,7 +90,7 @@ Load rules: ≥55 mph → No Travel for any load · 45–54 mph + >30,000 lb →
 **Band edges.** Neighbouring ranges share an edge, so each band is read as `[lower, next lower)`: 0.25 in/hr is High, 34.9 mph is Moderate. No Travel follows the table literally: wind ≥55 is inclusive, rain >1.00 and snow >3.0 are not. Load limits mean "more than" (exactly 30,000 lb doesn't trigger). Every edge has a test. Displayed values are rounded down, so 0.496 in/hr shows as 0.49 and never appears to be in the next band.
 
 ### Recommendation (`recommend.py`)
-Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The planner shows the routes side by side in a comparison table with these rules as rows, in this order: the best value in each row is ticked, rules where the winner and runner-up are equal say *Tie*, the one that picked the winner says *Decides*, and the rules below it are faded. The server sends the exact rounded values it ranked on (`rank_keys`) and the deciding rule (`ranking.decided_by`), so the table can't disagree with the decision. The recommendation also states it in words, e.g. *"Route B has the lowest High miles (0.0 mi vs 42.0 mi on Route A), with Severe miles tied."*
+Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The planner shows the routes side by side in a comparison table, with these rules as numbered rows in this order. The recommended route's column is shaded, the best value in each row is bold, and the rule that picked the winner is marked. The server sends the exact rounded values it ranked on (`rank_keys`) and the deciding rule (`ranking.decided_by`), so the table can't disagree with the decision. The recommendation says it in one sentence, e.g. *"Route B has the fewest High miles: 0.0 mi, against 42.0 mi on Route A. Severe miles is the same on both."*
 
 ### Heatmap (`heatmap.py`, `map/heatmapFrames.ts`)
 - The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
@@ -102,9 +102,9 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (125) | `cd backend && python manage.py test routing` |
+| Backend tests (127) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (48, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (49, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.

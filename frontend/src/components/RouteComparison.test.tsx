@@ -31,14 +31,15 @@ function option(id: string, rank: number, severe: number, high: number, avg: num
   });
 }
 
-// B wins on High miles: Severe is tied, so rule 2 decides.
+// B wins on High miles: Severe is equal, so rule 2 decides.
 const routes: RouteOption[] = [
   option("A", 2, 0, 40, 0.8, 9),
   option("B", 1, 0, 10, 0.9, 11),
   option("C", 3, 20, 0, 1.2, 8),
 ];
 
-function setup(decided: CriterionId | null = "high", list = routes, onSelect = vi.fn()) {
+function setup(decided: CriterionId | null = "high", list = routes) {
+  const onSelect = vi.fn();
   render(
     <RouteComparison
       routes={list}
@@ -50,70 +51,68 @@ function setup(decided: CriterionId | null = "high", list = routes, onSelect = v
   return onSelect;
 }
 
-const row = (label: RegExp) => screen.getByRole("rowheader", { name: label }).closest("tr")!;
+const row = (name: RegExp) => screen.getByRole("rowheader", { name }).closest("tr")!;
+// The cells keep numbers and units together with non-breaking spaces.
+const values = (name: RegExp) =>
+  within(row(name))
+    .getAllByRole("cell")
+    .map((c) => c.textContent?.replace(/\u00a0/g, " "));
 
 describe("RouteComparison", () => {
-  it("puts the routes in rank order and marks the best one", () => {
+  it("puts the routes in rank order, recommended first", () => {
     setup();
-    const heads = screen
-      .getAllByRole("button", { pressed: false })
-      .concat(screen.getByRole("button", { pressed: true }));
-    expect(heads.length).toBe(3);
-    const names = screen
-      .getAllByRole("columnheader")
-      .slice(1)
-      .map((h) => h.textContent);
-    expect(names[0]).toMatch(/#1.*Route B.*Best/);
-    expect(names[1]).toMatch(/#2.*Route A/);
-    expect(names[2]).toMatch(/#3.*Route C/);
+    const heads = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(heads).toEqual(["Route BBest route", "Route AOption 2", "Route COption 3"]);
   });
 
-  it("lists the rules in the brief's order and shows which one decided", () => {
+  it("lists the rules in the brief's order", () => {
     setup();
-    const ruleRows = screen
+    const rules = screen
       .getAllByRole("rowheader")
       .slice(0, 4)
       .map((h) => h.textContent);
-    expect(ruleRows[0]).toMatch(/^1Severe miles/);
-    expect(ruleRows[1]).toMatch(/^2High miles.*Decides/);
-    expect(ruleRows[2]).toMatch(/^3Average risk/);
-    expect(ruleRows[3]).toMatch(/^4Trip time/);
-    expect(within(row(/Severe miles/)).getByText("Tie")).toBeTruthy();
-    expect(row(/Average risk/).className).toContain("unused"); // already decided above
+    expect(rules).toEqual(["1.Severe miles", "2.High miles", "3.Average risk", "4.Trip time"]);
   });
 
-  it("marks the lowest value in each rule", () => {
+  it("marks the rule that decided", () => {
     setup();
-    const [b, a, c] = within(row(/High miles/)).getAllByRole("cell");
-    expect(b.querySelector(".best")).toBeNull(); // 10 mi
-    expect(a.querySelector(".best")).toBeNull(); // 40 mi
-    expect(c.querySelector(".best")?.textContent).toBe("0 mi");
+    expect(row(/High miles/).className).toBe("decides");
+    expect(row(/Severe miles/).className).toBe("");
+  });
+
+  it("puts the best value of each rule in bold", () => {
+    setup();
+    const bold = (name: RegExp) =>
+      within(row(name))
+        .getAllByRole("cell")
+        .map((c) => !!c.querySelector(".best"));
+    expect(values(/High miles/)).toEqual(["10 mi", "40 mi", "0 mi"]);
+    expect(bold(/High miles/)).toEqual([false, false, true]);
+    expect(bold(/Severe miles/)).toEqual([true, true, false]);
   });
 
   it("only shows No Travel miles when a route has any", () => {
     setup();
     expect(screen.queryByRole("rowheader", { name: /No Travel miles/ })).toBeNull();
+    cleanup();
     const blocked = option("C", 3, 20, 0, 1.2, 8, {
       risk_miles: { low: 70, moderate: 0, high: 0, severe: 20, no_travel: 10, unknown: 0 },
+      max_level: 4,
     });
-    cleanup();
     setup("high", [routes[0], routes[1], blocked]);
-    expect(screen.getByRole("rowheader", { name: /No Travel miles/ })).toBeTruthy();
-    expect(screen.getByText("No Travel zone")).toBeTruthy();
+    expect(values(/No Travel miles/)).toEqual(["0 mi", "0 mi", "10 mi"]);
+    expect(values(/Worst weather/)[2]).toBe("No Travel");
   });
 
-  it("flags a route that needs an extra overnight rest", () => {
+  it("notes a route that needs an extra overnight rest", () => {
     const overnight = option("C", 3, 0, 0, 0, 22, { stops: { breaks: 1, rests: 1 }, extra_rests: 1 });
     setup("travel_time", [routes[0], routes[1], overnight]);
-    const stops = within(row(/Stops/)).getAllByRole("cell");
-    expect(stops[2].textContent).toMatch(/30 min break \+ 10 h rest.*Extra overnight rest/);
-    expect(stops[0].textContent).not.toMatch(/Extra overnight rest/);
+    expect(values(/Stops/)).toEqual(["None", "None", "30 min break, 10 h restExtra 10 h rest"]);
   });
 
-  it("has nothing to highlight when no rule decided", () => {
+  it("marks nothing when no rule decided", () => {
     setup(null);
-    expect(screen.queryByText("Decides")).toBeNull();
-    expect(screen.queryByText("Tie")).toBeNull();
+    expect(document.querySelector("tr.decides")).toBeNull();
   });
 
   it("selects a route from its column", async () => {

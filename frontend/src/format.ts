@@ -14,8 +14,12 @@ export const formatTime = (iso: string | Date) => timeFormat.format(new Date(iso
 
 const clockFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 
-// Short form for tight spots, e.g. "Sat 6:08 AM".
-export const formatClock = (iso: string | Date) => clockFormat.format(new Date(iso)).replace(",", "");
+// Short form for tight spots, e.g. "Sat 6:08 AM". The time never wraps away from its AM/PM.
+export const formatClock = (iso: string | Date) =>
+  clockFormat
+    .format(new Date(iso))
+    .replace(",", "")
+    .replace(/\s(AM|PM)$/i, "\u00a0$1");
 
 export const formatMiles = (miles: number) =>
   `${miles.toLocaleString(undefined, { maximumFractionDigits: miles < 10 ? 1 : 0 })} mi`;

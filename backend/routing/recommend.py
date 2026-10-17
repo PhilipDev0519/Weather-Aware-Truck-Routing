@@ -69,18 +69,35 @@ def ranking_summary(best: dict, runner_up: dict | None) -> dict:
     }
 
 
+# How each criterion reads when it's the one that picked the winner.
+_WINS_BY = {
+    "no_travel": "has the fewest No Travel miles",
+    "severe": "has the fewest Severe miles",
+    "high": "has the fewest High miles",
+    "avg_risk": "has the lowest average risk",
+    "travel_time": "is the quickest",
+}
+
+
 def explain(best: dict, runner_up: dict | None) -> str:
+    """One plain sentence on why the winner beat the runner-up."""
     if runner_up is None:
-        return f"{best['name']} is the only available route."
+        return f"{best['name']} is the only route found."
 
-    for i, criterion in enumerate(CRITERIA):
-        if criterion.key(best) == criterion.key(runner_up):
-            continue
-        text = (
-            f"{best['name']} has the lowest {criterion.label} "
-            f"({criterion.describe(best)} vs {criterion.describe(runner_up)} on {runner_up['name']})"
-        )
-        tied = [c.label for c in CRITERIA[1:i]]  # no point mentioning No Travel when it's 0 everywhere
-        return text + (f", with {', '.join(tied)} tied." if tied else ".")
+    decided = deciding_criterion(best, runner_up)
+    if decided is None:
+        return f"{best['name']} and {runner_up['name']} are equal on every rule."
 
-    return f"{best['name']} and {runner_up['name']} are equivalent on every criterion."
+    i = next(i for i, c in enumerate(CRITERIA) if c.id == decided)
+    criterion = CRITERIA[i]
+    text = (
+        f"{best['name']} {_WINS_BY[decided]}: {criterion.describe(best)}, "
+        f"against {criterion.describe(runner_up)} on {runner_up['name']}."
+    )
+    # The safety rules it didn't win on were equal; say so (No Travel goes
+    # unmentioned, since it's zero almost every time).
+    tied = [c.label for c in CRITERIA[1:i]]
+    if tied:
+        names = tied[0] if len(tied) == 1 else ", ".join(tied[:-1]) + " and " + tied[-1]
+        text += f" {names[0].upper()}{names[1:]} {'is' if len(tied) == 1 else 'are'} the same on both."
+    return text

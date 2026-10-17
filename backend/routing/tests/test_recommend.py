@@ -48,14 +48,29 @@ class RankingTests(SimpleTestCase):
 
 
 class ExplainTests(SimpleTestCase):
-    def test_names_deciding_criterion(self):
+    def test_says_which_rule_won_and_what_was_equal(self):
         best, other = route("Route B", 10, high=10), route("Route A", 8, high=50)
-        text = explain(best, other)
-        self.assertIn("lowest High miles", text)
-        self.assertIn("Severe miles tied", text)
+        self.assertEqual(
+            explain(best, other),
+            "Route B has the fewest High miles: 10.0 mi, against 50.0 mi on Route A. Severe miles is the same on both.",
+        )
 
-    def test_single_route(self):
-        self.assertIn("only available route", explain(route("Route A", 5), None))
+    def test_quickest_route_when_safety_is_equal(self):
+        self.assertEqual(
+            explain(route("Route A", 24 + 38 / 60), route("Route B", 25 + 19 / 60)),
+            "Route A is the quickest: 24h 38m, against 25h 19m on Route B. "
+            "Severe miles, High miles and average risk are the same on both.",
+        )
+
+    def test_safety_wins_without_mentioning_ties(self):
+        text = explain(route("Route B", 12), route("Route A", 9, severe=42))
+        self.assertEqual(text, "Route B has the fewest Severe miles: 0.0 mi, against 42.0 mi on Route A.")
+
+    def test_single_route_and_full_tie(self):
+        self.assertEqual(explain(route("Route A", 5), None), "Route A is the only route found.")
+        self.assertEqual(
+            explain(route("Route A", 5), route("Route B", 5)), "Route A and Route B are equal on every rule."
+        )
 
 
 class DecidingCriterionTests(SimpleTestCase):

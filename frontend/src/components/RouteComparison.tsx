@@ -1,43 +1,33 @@
 import { formatClock, formatDuration, formatMiles } from "../format";
 import { LEVELS, UNKNOWN_COLOR, levelColor, levelLabel } from "../risk";
 import type { CriterionId, Ranking, RouteOption } from "../types";
-import { Icon } from "./Icon";
 
-// The routes side by side, with the ranking rules as rows in the brief's
-// order. The values are the exact ones the server ranked on (rank_keys), so
-// the row it says decided is visibly the first one where the winner pulls ahead.
+// The routes side by side. The rows are the ranking rules in the brief's
+// order, and the values are the exact ones the server ranked on, so the
+// row it marks as deciding is visibly where the winner pulls ahead.
 
-const ROWS: Record<CriterionId, { rule: string | null; label: string; hint: string }> = {
-  no_travel: { rule: null, label: "No Travel miles", hint: "Any No Travel stretch puts a route last" },
-  severe: { rule: "1", label: "Severe miles", hint: "Fewest Severe miles" },
-  high: { rule: "2", label: "High miles", hint: "Fewest High miles" },
-  avg_risk: {
-    rule: "3",
-    label: "Average risk",
-    hint: "Distance-weighted: Low 0, Moderate 1, High 2, Severe 3, No Travel 4",
-  },
-  travel_time: { rule: "4", label: "Trip time", hint: "Door to door, required stops included" },
+const RULES: Record<CriterionId, { label: string; hint: string }> = {
+  no_travel: { label: "No Travel miles", hint: "Any No Travel stretch puts a route last" },
+  severe: { label: "Severe miles", hint: "Miles where the weather is rated Severe" },
+  high: { label: "High miles", hint: "Miles where the weather is rated High" },
+  avg_risk: { label: "Average risk", hint: "Distance-weighted: Low 0, Moderate 1, High 2, Severe 3, No Travel 4" },
+  travel_time: { label: "Trip time", hint: "Door to door, required stops included" },
 };
 
-export const RULE_TEXT: Record<CriterionId, string> = {
-  no_travel: "No Travel miles (always compared first)",
-  severe: "rule 1, fewest Severe miles",
-  high: "rule 2, fewest High miles",
-  avg_risk: "rule 3, lowest average risk",
-  travel_time: "rule 4, shortest trip time",
-};
-
-function value(id: CriterionId, r: RouteOption): string {
-  if (id === "avg_risk") return r.avg_risk.toFixed(2);
-  if (id === "travel_time") return formatDuration(r.duration_hours);
-  return formatMiles(r.risk_miles[id]);
+function ruleValue(id: CriterionId, route: RouteOption): string {
+  if (id === "avg_risk") return route.avg_risk.toFixed(2);
+  if (id === "travel_time") return formatDuration(route.duration_hours);
+  return formatMiles(route.risk_miles[id]);
 }
 
-function stops({ stops }: RouteOption): string {
+// Keeps a number on the same line as its unit.
+const NBSP = "\u00a0";
+
+function describeStops({ stops }: RouteOption): string {
   const parts = [];
-  if (stops.breaks) parts.push(stops.breaks === 1 ? "30 min break" : `${stops.breaks} × 30 min breaks`);
-  if (stops.rests) parts.push(stops.rests === 1 ? "10 h rest" : `${stops.rests} × 10 h rests`);
-  return parts.join(" + ") || "None";
+  if (stops.breaks) parts.push(stops.breaks === 1 ? `30${NBSP}min break` : `${stops.breaks} × 30${NBSP}min breaks`);
+  if (stops.rests) parts.push(stops.rests === 1 ? `10${NBSP}h rest` : `${stops.rests} × 10${NBSP}h rests`);
+  return parts.length ? parts.join(", ") : "None";
 }
 
 function RiskBar({ route }: { route: RouteOption }) {
@@ -68,130 +58,100 @@ interface Props {
 
 export function RouteComparison({ routes, ranking, selectedId, onSelect }: Props) {
   const ordered = [...routes].sort((a, b) => a.rank - b.rank);
-  const decided = ranking.criteria.findIndex((c) => c.id === ranking.decided_by);
-  // No Travel is always compared, but a row of zeros only adds noise.
-  const rows = ranking.criteria.filter(
+  // No Travel is always compared first, but a row of zeros is just noise.
+  const shownRules = ranking.criteria.filter(
     (c) => c.id !== "no_travel" || ranking.decided_by === "no_travel" || routes.some((r) => r.risk_miles.no_travel > 0),
   );
 
-  const cellProps = (route: RouteOption) => ({
-    className: route.id === selectedId ? "selected" : undefined,
-    onClick: () => onSelect(route.id),
-  });
+  const columnClass = (route: RouteOption) =>
+    [route.recommended && "is-recommended", route.id === selectedId && "is-selected"].filter(Boolean).join(" ") ||
+    undefined;
+
+  const cells = (render: (route: RouteOption) => React.ReactNode) =>
+    ordered.map((route) => (
+      <td key={route.id} className={columnClass(route)} onClick={() => onSelect(route.id)}>
+        {render(route)}
+      </td>
+    ));
 
   return (
-    <div className="compare">
-      <table className="compare-table">
+    <figure className="comparison">
+      <table>
         <thead>
           <tr>
-            <th scope="col" className="compare-corner">
-              Ranked by
-            </th>
+            <td />
             {ordered.map((route) => (
-              <th key={route.id} scope="col" className={route.id === selectedId ? "selected" : undefined}>
-                <button
-                  type="button"
-                  className="compare-route"
-                  aria-pressed={route.id === selectedId}
-                  onClick={() => onSelect(route.id)}
-                >
-                  <span className="compare-rank">#{route.rank}</span>
-                  <strong>{route.name}</strong>
-                  {route.recommended && (
-                    <span className="badge">
-                      <Icon name="shield" size={11} /> Best
-                    </span>
-                  )}
+              <th key={route.id} scope="col" className={columnClass(route)}>
+                <button type="button" aria-pressed={route.id === selectedId} onClick={() => onSelect(route.id)}>
+                  {route.name}
+                  <small>{route.recommended ? "Best route" : `Option ${route.rank}`}</small>
                 </button>
               </th>
             ))}
           </tr>
         </thead>
+
         <tbody>
-          {rows.map((criterion) => {
-            const i = ranking.criteria.indexOf(criterion);
-            const row = ROWS[criterion.id];
-            const best = Math.min(...routes.map((r) => r.rank_keys[criterion.id]));
-            const state = decided < 0 ? "" : i < decided ? "tied" : i === decided ? "decides" : "unused";
+          {shownRules.map((rule) => {
+            const best = Math.min(...routes.map((r) => r.rank_keys[rule.id]));
+            const decides = rule.id === ranking.decided_by;
+            const number = rule.id === "no_travel" ? null : ranking.criteria.indexOf(rule);
             return (
-              <tr key={criterion.id} className={`rule-row ${state}`}>
-                <th scope="row" title={row.hint}>
-                  {row.rule && <span className="rule-num">{row.rule}</span>}
-                  <span className="rule-label">{row.label}</span>
-                  {state === "decides" && <span className="rule-tag decides">Decides</span>}
-                  {state === "tied" && <span className="rule-tag">Tie</span>}
+              <tr key={rule.id} className={decides ? "decides" : undefined}>
+                <th scope="row" title={RULES[rule.id].hint}>
+                  {number !== null && <span className="rule-number">{number}.</span>}
+                  {RULES[rule.id].label}
                 </th>
-                {ordered.map((route) => {
-                  const isBest = routes.length > 1 && route.rank_keys[criterion.id] === best;
-                  return (
-                    <td key={route.id} {...cellProps(route)}>
-                      <span className={isBest ? "best" : undefined}>
-                        {isBest && <Icon name="check" size={12} />}
-                        {value(criterion.id, route)}
-                      </span>
-                    </td>
-                  );
-                })}
+                {cells((route) => (
+                  <span className={routes.length > 1 && route.rank_keys[rule.id] === best ? "best" : undefined}>
+                    {ruleValue(rule.id, route)}
+                  </span>
+                ))}
               </tr>
             );
           })}
+        </tbody>
 
-          <tr className="compare-divider">
-            <th scope="row" colSpan={ordered.length + 1}>
-              Details
-            </th>
-          </tr>
+        <tbody className="details">
           <tr>
             <th scope="row">Distance</th>
-            {ordered.map((route) => (
-              <td key={route.id} {...cellProps(route)}>
-                {formatMiles(route.distance_miles)}
-              </td>
-            ))}
+            {cells((route) => formatMiles(route.distance_miles))}
           </tr>
           <tr>
             <th scope="row">Arrives</th>
-            {ordered.map((route) => (
-              <td key={route.id} {...cellProps(route)}>
-                {formatClock(route.arrival)}
-              </td>
-            ))}
+            {cells((route) => formatClock(route.arrival))}
           </tr>
           <tr>
             <th scope="row">Stops</th>
-            {ordered.map((route) => (
-              <td key={route.id} {...cellProps(route)}>
-                {stops(route)}
-                {route.extra_rests > 0 && (
-                  <span className="badge warn" title="Its driving time passes the 11-hour limit">
-                    <Icon name="clock" size={11} />
-                    <span className="long-label">Extra overnight rest</span>
-                    <span className="short-label">Extra rest</span>
-                  </span>
-                )}
-              </td>
+            {cells((route) => (
+              <>
+                {describeStops(route)}
+                {route.extra_rests > 0 && <span className="note">Extra 10&nbsp;h rest</span>}
+              </>
             ))}
           </tr>
           <tr>
-            <th scope="row">Worst level</th>
-            {ordered.map((route) => (
-              <td key={route.id} {...cellProps(route)}>
-                <span className="dot" style={{ background: levelColor(route.max_level) }} />
+            <th scope="row">Worst weather</th>
+            {cells((route) => (
+              <span className="level">
+                <span className="swatch" style={{ background: levelColor(route.max_level) }} />
                 {levelLabel(route.max_level)}
-                {route.risk_miles.no_travel > 0 && <span className="badge danger">No Travel zone</span>}
-              </td>
+              </span>
             ))}
           </tr>
           <tr>
-            <th scope="row">Miles by risk</th>
-            {ordered.map((route) => (
-              <td key={route.id} {...cellProps(route)}>
-                <RiskBar route={route} />
-              </td>
+            <th scope="row">Risk by mile</th>
+            {cells((route) => (
+              <RiskBar route={route} />
             ))}
           </tr>
         </tbody>
       </table>
-    </div>
+
+      <figcaption>
+        Rules are applied in order. The first one where the routes differ decides; it&rsquo;s marked on the left. Best
+        values are in bold.
+      </figcaption>
+    </figure>
   );
 }

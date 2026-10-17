@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "../api";
 import { CheckpointTable } from "../components/CheckpointTable";
 import { Icon } from "../components/Icon";
-import { RULE_TEXT, RouteComparison } from "../components/RouteComparison";
+import { RouteComparison } from "../components/RouteComparison";
 import { TripForm } from "../components/TripForm";
 import { formatTime } from "../format";
 import { MapPanel, type HeatmapState } from "../map/MapPanel";
@@ -99,19 +99,9 @@ export function PlannerPage() {
         {!loading && plan && (
           <section className="results" aria-live="polite">
             <div className="recommendation">
-              <span className="rec-icon">
-                <Icon name="shield" size={22} />
-              </span>
-              <div>
-                <div className="rec-label">Recommended</div>
-                <div className="rec-title">Route {plan.recommended_route_id}</div>
-                <p>{plan.recommendation_reason}</p>
-                {plan.ranking.decided_by && (
-                  <p className="rec-rule">
-                    <Icon name="check" size={13} /> Decided by {RULE_TEXT[plan.ranking.decided_by]}
-                  </p>
-                )}
-              </div>
+              <p className="recommendation-label">Recommended route</p>
+              <h2>Route {plan.recommended_route_id}</h2>
+              <p>{plan.recommendation_reason}</p>
             </div>
 
             {plan.warnings.map((w) => (
@@ -121,10 +111,7 @@ export function PlannerPage() {
               </div>
             ))}
 
-            <div className="results-head">
-              <h2 className="results-title">Compare the routes</h2>
-              <span className="muted small">Rules apply top to bottom, as in the brief</span>
-            </div>
+            <h2 className="results-title">How the routes compare</h2>
             <RouteComparison routes={plan.routes} ranking={plan.ranking} selectedId={selectedId} onSelect={onSelect} />
 
             {selected && <CheckpointTable route={selected} onFocus={onFocus} />}
@@ -169,30 +156,22 @@ function TripSummary({ plan, onEdit }: { plan: PlanResponse; onEdit: () => void 
           Edit trip
         </button>
       </div>
-      <div className="trip-meta">
-        <span>
-          <Icon name="calendar" size={14} /> Leaves {formatTime(plan.departure)}
-        </span>
-        <span>
-          <Icon name="package" size={14} /> {plan.load_lbs.toLocaleString()} lb load
-        </span>
-        <span>
-          <Icon name="pin" size={14} /> Weather every {plan.interval_miles} mi
-        </span>
-        <span>
-          <Icon name="clock" size={14} /> {plan.rest_breaks ? "Rest stops included" : "No rest stops"}
-        </span>
-        <span
-          title={
-            truck
-              ? "Roads from openrouteservice's truck profile (avoids lower weight limits); times from US road speeds capped at 65 mph"
-              : "Truck routing unavailable: OSRM car routes with speeds capped at 65 mph"
-          }
-        >
-          <Icon name="truck" size={14} />{" "}
-          {truck ? `Truck routes · ${plan.routing.gross_lbs?.toLocaleString()} lb gross` : "Car routes, truck speeds"}
-        </span>
-      </div>
+      <p className="trip-summary-details">
+        Leaves {formatTime(plan.departure)} · {plan.load_lbs.toLocaleString()}&nbsp;lb load · weather every{" "}
+        {plan.interval_miles}&nbsp;mi · {plan.rest_breaks ? "rest stops included" : "no rest stops"}
+      </p>
+      <p
+        className="trip-summary-routing"
+        title={
+          truck
+            ? "Roads from openrouteservice's truck profile (avoids lower weight limits); times from US road speeds capped at 65 mph"
+            : "Truck routing is unavailable right now: OSRM car routes with speeds capped at 65 mph"
+        }
+      >
+        {truck
+          ? `Truck routes for ${plan.routing.gross_lbs?.toLocaleString()} lb gross weight`
+          : "Car routes at truck speed (truck routing unavailable)"}
+      </p>
     </section>
   );
 }
