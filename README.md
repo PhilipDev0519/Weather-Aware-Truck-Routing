@@ -18,6 +18,8 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 
 **Day and night mode.** The sun / moon button in the header switches between a light day theme and a dark night theme, which is easier on the eyes in a cab at night. On a first visit the site follows the device's light or dark setting; once you pick one, the browser remembers it. At night the street map is darkened too (terrain and satellite stay as they are), and the risk colours don't change.
 
+![The planner in night mode](docs/screenshot-night.png)
+
 ## Requirements at a glance
 
 | Requirement | Code | Tests |
