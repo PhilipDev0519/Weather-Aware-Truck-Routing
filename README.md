@@ -4,9 +4,18 @@ A React + Django web app that helps a truck driver choose the safest route based
 
 Enter an origin, destination, departure time and load weight. The app finds **3 route options**, checks the forecast every **10 / 25 / 50 miles** for the hour the truck will reach each point, rates the risk with the spec's rules and recommends a route. The map shows every route, checkpoint, risk level, ETA and route summary, plus a **weather heatmap along the corridor with a 0–48 h slider**.
 
-**Live app:** https://weather-aware-truck-routing-jhonacestina.vercel.app/
+- **Live app:** https://weather-aware-truck-routing-jhonacestina.vercel.app/
+- **Walkthrough (Loom):** https://www.loom.com/share/58b0fc03fb0448399d0782b58c226827
 
-![Screenshot](docs/screenshot.png)
+![The planner: trip summary, recommended route, route comparison, and the map with the corridor heatmap](docs/screenshot.png)
+
+## Using the planner
+
+1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
+2. **Read the answer.** The form folds into a one-line trip summary (*Edit trip* brings it back). Below it, the **recommended route** card gives the route, its door-to-door time, the reason in one sentence, and its distance, arrival time and Severe / High miles.
+3. **See why.** *How the routes compare* puts the three routes side by side. The rows are the ranking rules in the brief's order; the best value in each row is bold, and the rule that decided is marked on the left. Under that: distance, arrival, stops, the worst weather on the route, and its miles by risk level.
+4. **Check the road.** The map shows all three routes coloured by risk, every checkpoint with its arrival time (hover for the weather there), and the selected route's checkpoint table. Click a route in the table or on the map to select it.
+5. **Look ahead.** The heatmap shows risk, wind, rain or snow along the corridor for each hour from departure to +48 h. The 🚚 marker shows where the truck would be at that hour; the blue mark on the slider is the arrival time.
 
 ## Requirements at a glance
 
@@ -16,7 +25,7 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 | 3 route options from a routing API | `route_options.py`, `services/ors.py`, `services/osrm.py` | `test_route_options.py`, `test_ors.py` |
 | Weather every 10 / 25 / 50 mi at the truck's ETA | `planner.py`, `services/weather.py` | `test_planner.py`, `test_weather.py` |
 | Risk thresholds and load rules | `risk.py` (mirrored in `risk.ts` for the map) | `test_risk.py`, `risk.test.ts` |
-| Recommendation (Severe → High → avg risk → time) | `recommend.py`, `RouteComparison.tsx` | `test_recommend.py`, `RouteComparison.test.tsx` |
+| Recommendation (Severe → High → avg risk → time) | `recommend.py`, `RecommendationCard.tsx`, `RouteComparison.tsx` | `test_recommend.py`, `RecommendationCard.test.tsx`, `RouteComparison.test.tsx` |
 | Routes, checkpoints, risk, ETAs, summaries on a map | `map/RoutesLayer.tsx`, `CheckpointTable.tsx` | `CheckpointTable.test.tsx`, `RouteComparison.test.tsx` |
 | Corridor heatmap with a 0–48 h slider | `heatmap.py`, `map/heatmapFrames.ts`, `map/HeatmapControls.tsx` | `test_heatmap.py`, `heatmapFrames.test.ts`, `HeatmapControls.test.tsx` |
 
@@ -64,7 +73,7 @@ Django REST API ── route_options ── openrouteservice (truck roads) + OSR
 - **Truck roads.** Routes come from openrouteservice's heavy-goods-vehicle profile, given the truck's gross weight (load + 33,000 lb empty truck), so roads with a lower weight limit are avoided.
 - **US truck times.** That profile drives rural interstates at ~44 mph (its speeds suit European truck limits). So each route is timed with OSRM's US road speeds along the same path, capped at **65 mph**. Chicago → Memphis: 9.6 h of driving, not 11.9 h.
 - **Three options.** Neither service returns three alternatives for long trips, so extra candidates are routed through via-points pushed to either side of the trip, wide detours first, then tighter ones if the third route would otherwise need an extra overnight rest. Out-and-back detours are cut. Candidates that are more than 50% slower, or share over 80% of their road with a chosen route, are dropped. The three quickest door-to-door are kept.
-- **Extra overnight rests are flagged.** Near the 11-hour driving limit, a route only a few percent longer needs a whole extra 10-hour rest. When no closer alternative exists (e.g. Kansas City → Nashville), that route is still shown and ranked on its real door-to-door time, with a warning and an *Extra overnight rest* badge so the reason is obvious.
+- **Extra overnight rests are flagged.** Near the 11-hour driving limit, a route only a few percent longer needs a whole extra 10-hour rest. When no closer alternative exists (e.g. Kansas City → Nashville), that route is still shown and ranked on its real door-to-door time, with a warning and an *Extra 10 h rest* note in the comparison table so the reason is obvious.
 - **Fallback.** Without a key, or if truck routing fails or its daily quota runs out, OSRM car routes are used and the plan says so. All three routes in a plan always use the same speed model.
 
 ### Checkpoints and ETAs (`planner.py`, `hos.py`)
@@ -90,7 +99,7 @@ Load rules: ≥55 mph → No Travel for any load · 45–54 mph + >30,000 lb →
 **Band edges.** Neighbouring ranges share an edge, so each band is read as `[lower, next lower)`: 0.25 in/hr is High, 34.9 mph is Moderate. No Travel follows the table literally: wind ≥55 is inclusive, rain >1.00 and snow >3.0 are not. Load limits mean "more than" (exactly 30,000 lb doesn't trigger). Every edge has a test. Displayed values are rounded down, so 0.496 in/hr shows as 0.49 and never appears to be in the next band.
 
 ### Recommendation (`recommend.py`)
-Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The planner shows the routes side by side in a comparison table, with these rules as numbered rows in this order. The recommended route's column is shaded, the best value in each row is bold, and the rule that picked the winner is marked. The server sends the exact rounded values it ranked on (`rank_keys`) and the deciding rule (`ranking.decided_by`), so the table can't disagree with the decision. The recommendation says it in one sentence, e.g. *"Route B has the fewest High miles: 0.0 mi, against 42.0 mi on Route A. Severe miles is the same on both."*
+Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The planner shows the routes side by side in a comparison table, with these rules as numbered rows in this order. The recommended route's column is shaded, the best value in each row is bold, and the rule that picked the winner is marked. The server sends the exact rounded values it ranked on (`rank_keys`) and the deciding rule (`ranking.decided_by`), so the table can't disagree with the decision. The recommendation says it in one sentence, e.g. *"Route B has the fewest High miles: 0.0 mi, against 42.0 mi on Route A. Severe miles is the same on both."* or, when the weather is the same everywhere, *"Route A is the quickest: 10h 08m, against 11h 07m on Route B. Severe miles, High miles and average risk are the same on both."*
 
 ### Heatmap (`heatmap.py`, `map/heatmapFrames.ts`)
 - The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
@@ -156,7 +165,12 @@ docker run -p 8000:8000 -e DJANGO_SECRET_KEY=change-me -e DJANGO_ALLOWED_HOSTS=l
 | `GET /api/tiles/<style>/<z>/<x>/<y>` | Map tiles, fetched by the server (`streets`, `terrain`, `satellite`, `labels`). The map loads tiles straight from the tile servers and only uses this for a tile that fails |
 | `GET /api/health` | Health check |
 
-`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks, include_heatmap}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to 14 days ahead; `interval_miles` is 10, 25 or 50. The response has the routes (with checkpoints, risk miles and rank), the recommendation and its reason, warnings, `routing` (`truck` or `car`, and the gross weight), the `corridor` and, unless `include_heatmap` is false, the heatmap. Errors are `{detail}`: 400 for bad input, an unknown place or no drivable route; 429 when a client sends too many requests; 502 when an outside service fails.
+`POST /api/plan` takes `{origin, destination, departure, load_lbs, interval_miles, rest_breaks, include_heatmap}`. Places are `{label, lat, lon}` from the autocomplete, or `{label}` to geocode on the server. `departure` is ISO-8601, from 1 hour ago to 14 days ahead; `interval_miles` is 10, 25 or 50. The response has:
+
+- `routes`: each with its checkpoints (mile, ETA, weather, risk level and reasons), `risk_miles`, `avg_risk`, `rank`, door-to-door `duration_hours` and `driving_hours`, `stops` and `stop_timeline` (where and when each break and rest happens), `extra_rests` (10 h rests beyond what the route with the fewest needs) and `rank_keys` (the exact values it was ranked on);
+- `recommended_route_id`, `recommendation_reason` and `ranking` (the criteria in order and `decided_by`, the one that picked the winner);
+- `warnings`, `routing` (`truck` or `car`, and the gross weight) and `corridor`;
+- the heatmap, unless `include_heatmap` is false. Errors are `{detail}`: 400 for bad input, an unknown place or no drivable route; 429 when a client sends too many requests; 502 when an outside service fails.
 
 ## Project structure
 
@@ -170,14 +184,16 @@ backend/routing/
   tests/             backend tests (outside services mocked)
 frontend/src/
   pages/             Home, Planner, About
-  components/        trip form, place search, route comparison, checkpoint table
-  map/               map panel, routes, heatmap drawing + controls, wind arrows, truck marker
+  components/        trip form, place search, recommendation card, route comparison,
+                     checkpoint table, home page illustration
+  map/               map panel, routes, heatmap drawing + controls (ETA mark), wind arrows,
+                     truck marker
   risk.ts, api.ts, types.ts, *.test.ts(x)
 ```
 
 ## Limitations
 - **Truck restrictions:** weight limits are respected; height and hazmat aren't modelled, since the form doesn't ask for them.
-- **Free-tier quotas:** truck routing allows a limited number of requests a day (a new plan uses 5–9; repeats are cached for 6 h). When it runs out, plans use car routes. The free weather API allows ~600 locations a minute per server IP, and on shared hosting such as Vercel other apps use the same IP. A plan that hits the limit waits for it to lift: one request probes every 5 s, so the plan carries on within seconds of the limit resetting (at most ~75 s). The page says why it's waiting. A coast-to-coast trip at 10-mile spacing always needs more than one minute's quota.
+- **Free-tier quotas:** openrouteservice's free plan allows 2,000 route requests a day and 40 a minute. A new plan uses about 5–15 (the main route plus the detours tried for routes B and C); repeats are cached for 6 h. When the quota runs out, plans use car routes and say so, and truck routes come back by themselves when it renews. The free weather API allows ~600 locations a minute per server IP, and on shared hosting such as Vercel other apps use the same IP. A plan that hits the limit waits for it to lift: one request probes every 5 s, so the plan carries on within seconds of the limit resetting (at most ~75 s). The page says why it's waiting. A coast-to-coast trip at 10-mile spacing always needs more than one minute's quota.
 - **Forecast range:** forecasts end after 16 days. Checkpoints beyond that show as **Unknown** and are left out of the average risk, with a warning.
 - **Hours of service** cover the two rules that apply within one trip; sleeper-berth splits and weekly limits aren't modelled.
 - The cache is in memory, per process. Use Redis when running several instances.
