@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "../api";
 import { CheckpointTable } from "../components/CheckpointTable";
 import { Icon } from "../components/Icon";
+import { RecommendationCard } from "../components/RecommendationCard";
 import { RouteComparison } from "../components/RouteComparison";
 import { TripForm } from "../components/TripForm";
 import { formatTime } from "../format";
@@ -66,6 +67,7 @@ export function PlannerPage() {
   }, []);
 
   const selected = plan?.routes.find((r) => r.id === selectedId) ?? null;
+  const recommended = plan?.routes.find((r) => r.recommended) ?? null;
   const onFocus = useCallback((cp: Checkpoint) => setFocus({ routeName: selected?.name ?? "", cp }), [selected?.name]);
   const onSelect = useCallback((id: string) => {
     setSelectedId(id);
@@ -98,11 +100,7 @@ export function PlannerPage() {
 
         {!loading && plan && (
           <section className="results" aria-live="polite">
-            <div className="recommendation">
-              <p className="recommendation-label">Recommended route</p>
-              <h2>Route {plan.recommended_route_id}</h2>
-              <p>{plan.recommendation_reason}</p>
-            </div>
+            {recommended && <RecommendationCard route={recommended} reason={plan.recommendation_reason} />}
 
             {plan.warnings.map((w) => (
               <div key={w} className="alert alert-warning">

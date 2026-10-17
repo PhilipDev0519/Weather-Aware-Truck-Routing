@@ -104,7 +104,7 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 |---|---|
 | Backend tests (127) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (49, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (52, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.

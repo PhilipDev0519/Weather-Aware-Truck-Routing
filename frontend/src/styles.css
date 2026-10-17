@@ -1283,31 +1283,86 @@ button:disabled {
 
 /* recommended route */
 .recommendation {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
-  border-radius: var(--radius);
-  padding: 14px 16px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: 16px 18px 14px;
+  box-shadow: var(--shadow);
+}
+
+.recommendation-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .recommendation-label {
   margin: 0;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--muted);
+  color: #b8c7da;
 }
 
 .recommendation h2 {
-  margin: 2px 0 6px;
-  font-size: 20px;
-  letter-spacing: -0.01em;
+  margin: 2px 0 0;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #fff;
 }
 
-.recommendation p:last-child {
+.recommendation-time {
+  display: grid;
+  justify-items: end;
   margin: 0;
+  text-align: right;
+}
+
+.recommendation-time strong {
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.recommendation-time span {
+  font-size: 12px;
+  color: #b8c7da;
+}
+
+.recommendation-reason {
+  margin: 12px 0 0;
   font-size: 14px;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: #dbe4f0;
+}
+
+.recommendation-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.recommendation-facts dt {
+  font-size: 11.5px;
+  color: #9fb2ca;
+}
+
+.recommendation-facts dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 420px) {
+  .recommendation-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* what was entered, once results are showing */
