@@ -164,7 +164,9 @@ export function RouteComparison({ routes, ranking, selectedId, onSelect }: Props
                 {stops(route)}
                 {route.extra_rests > 0 && (
                   <span className="badge warn" title="Its driving time passes the 11-hour limit">
-                    <Icon name="clock" size={11} /> Extra overnight rest
+                    <Icon name="clock" size={11} />
+                    <span className="long-label">Extra overnight rest</span>
+                    <span className="short-label">Extra rest</span>
                   </span>
                 )}
               </td>
