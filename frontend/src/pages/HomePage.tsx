@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { HeroIllustration } from "../components/HeroIllustration";
+import { HeroScene } from "../components/HeroScene";
 import { Icon, type IconName } from "../components/Icon";
 import { RulesTable } from "../components/RulesTable";
 
@@ -44,47 +44,52 @@ const FEATURES: { icon: IconName; title: string; text: string }[] = [
   },
 ];
 
+const STATS = [
+  { value: "3", label: "routes compared" },
+  { value: "10 / 25 / 50 mi", label: "weather checkpoints" },
+  { value: "0–48 h", label: "forecast slider" },
+  { value: "FMCSA", label: "rest stops in every ETA" },
+];
+
 const PRIORITIES = ["Fewest Severe miles", "Fewest High miles", "Lowest average risk", "Shortest travel time"];
 
 export function HomePage() {
   return (
     <>
       <section className="hero">
-        <div className="container hero-grid">
+        <HeroScene />
+        <div className="container hero-inner">
           <div className="hero-copy">
-            <span className="eyebrow">
-              <Icon name="truck" size={15} /> Route planning for truck drivers
-            </span>
+            <span className="eyebrow eyebrow-flag">Route planning for truck drivers</span>
             <h1>
-              Choose the route the <span className="accent-text">weather</span> won't fight you on.
+              Pick the route the <span className="accent-text">weather</span> won't fight you on.
             </h1>
             <p className="lead">
-              Compare three routes, see the forecast at the exact hour you'll reach each stretch of road, and get a
-              recommendation that weighs weather risk against travel time for your load.
+              Compare three truck routes, see the forecast for the hour you'll reach each stretch of road, and get a
+              clear recommendation for your load.
             </p>
             <div className="hero-actions">
-              <Link to="/plan" className="btn btn-primary btn-lg">
+              <Link to="/plan" className="btn btn-cta btn-lg">
                 Plan a route <Icon name="arrowRight" size={18} />
               </Link>
-              <a href="#how-it-works" className="btn btn-ghost btn-lg">
+              <a href="#how-it-works" className="btn btn-outline-light btn-lg">
                 How it works
               </a>
             </div>
-            <ul className="hero-facts">
-              <li>
-                <Icon name="check" size={16} /> 3 route options
-              </li>
-              <li>
-                <Icon name="check" size={16} /> 0–48 h forecast
-              </li>
-              <li>
-                <Icon name="check" size={16} /> No sign-up
-              </li>
-            </ul>
           </div>
-          <HeroIllustration />
         </div>
       </section>
+
+      <div className="container">
+        <ul className="hero-stats">
+          {STATS.map((s) => (
+            <li key={s.label}>
+              <strong>{s.value}</strong>
+              <span>{s.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <section id="how-it-works" className="section">
         <div className="container">
