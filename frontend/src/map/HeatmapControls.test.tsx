@@ -80,6 +80,37 @@ describe("HeatmapControls", () => {
     expect(screen.getByText(/0–48 h forecast, which can outlast the trip/)).toBeTruthy();
   });
 
+  describe("ETA on the slider", () => {
+    const arrival = (hours: number) => ({ routeName: "Route A", time: "2026-01-10T22:06:00+00:00", hours });
+
+    it("marks the arrival at its exact place on the 0–48 h track", () => {
+      setup({ arrival: arrival(12) });
+      const mark = screen.getByRole("button", { name: /Go to Route A's arrival/ });
+      expect(mark.textContent).toMatch(/ETA/);
+      expect(mark.style.getPropertyValue("--at")).toBe("0.25"); // 12 of 48 hours
+    });
+
+    it("jumps to the first whole hour at which the truck has arrived", async () => {
+      const user = userEvent.setup();
+      const { onHour } = setup({ arrival: arrival(10.1) });
+      await user.click(screen.getByText(/ETA/));
+      expect(onHour).toHaveBeenCalledWith(11); // at +10 it's still on the road
+    });
+
+    it("doesn't round an on-the-hour arrival up", async () => {
+      const user = userEvent.setup();
+      const { onHour } = setup({ arrival: arrival(10) });
+      await user.click(screen.getByText(/ETA/));
+      expect(onHour).toHaveBeenCalledWith(10);
+    });
+
+    it("says so when the truck arrives after the 48 h window", () => {
+      setup({ arrival: arrival(52.5), truckStatus: "Route A: mile 900 of 1200" });
+      expect(screen.queryByRole("button", { name: /Go to Route A's arrival/ })).toBeNull();
+      expect(screen.getByText(/after the 48 h forecast window/)).toBeTruthy();
+    });
+  });
+
   it("shows the hour as an offset and as a clock time", () => {
     setup({ hour: 6 });
     expect(screen.getByText("+6h")).toBeTruthy();

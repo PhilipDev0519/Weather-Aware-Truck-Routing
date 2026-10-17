@@ -55,6 +55,18 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
   usePrerender(frameUrl, heatmap.data?.hours ?? 0);
   const selected = plan?.routes.find((r) => r.id === selectedId) ?? null;
   const truck = useTruck(selected, plan?.departure, heatmap.data?.start, hour);
+  // Same clock as the slider: hours after the heatmap's hour 0 (departure, rounded down).
+  const arrival = useMemo(
+    () =>
+      selected && heatmap.data
+        ? {
+            routeName: selected.name,
+            time: selected.arrival,
+            hours: (new Date(selected.arrival).getTime() - new Date(heatmap.data.start).getTime()) / 3_600_000,
+          }
+        : null,
+    [selected, heatmap.data],
+  );
 
   return (
     <div className="map-panel">
@@ -101,6 +113,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
           probe={probe}
           loadLbs={plan.load_lbs}
           truckStatus={truck?.status ?? null}
+          arrival={arrival}
         />
       )}
     </div>

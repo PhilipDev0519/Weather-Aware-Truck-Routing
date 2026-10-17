@@ -1,8 +1,15 @@
 import { Icon } from "../components/Icon";
-import { compass, fixedDown, formatTime } from "../format";
+import { compass, fixedDown, formatClock, formatTime } from "../format";
 import { LEVELS, assess, bandRange } from "../risk";
 import type { HeatLayer, HeatmapResponse, RiskLevel } from "../types";
 import type { HeatGrid } from "./heatmapFrames";
+
+// The selected route's arrival, in hours after the slider's hour 0.
+export interface Arrival {
+  routeName: string;
+  time: string; // ISO
+  hours: number;
+}
 
 // Cursor position in grid cells (see HeatGrid).
 export interface ProbePoint {
@@ -33,6 +40,7 @@ interface Props {
   probe: ProbePoint | null;
   loadLbs: number;
   truckStatus?: string | null; // where the selected route's truck is at this hour
+  arrival?: Arrival | null;
 }
 
 export function HeatmapControls(props: Props) {
@@ -78,16 +86,21 @@ export function HeatmapControls(props: Props) {
         >
           <Icon name={playing ? "pause" : "play"} size={16} />
         </button>
-        <input
-          type="range"
-          min={0}
-          max={maxHour}
-          step={1}
-          value={hour}
-          disabled={!data}
-          onChange={(e) => props.onHour(Number(e.target.value))}
-          aria-label="Forecast hour"
-        />
+        <div className={`slider-wrap${props.arrival && props.arrival.hours <= maxHour ? " has-eta" : ""}`}>
+          <input
+            type="range"
+            min={0}
+            max={maxHour}
+            step={1}
+            value={hour}
+            disabled={!data}
+            onChange={(e) => props.onHour(Number(e.target.value))}
+            aria-label="Forecast hour"
+          />
+          {props.arrival && props.arrival.hours <= maxHour && (
+            <EtaMark arrival={props.arrival} maxHour={maxHour} onHour={props.onHour} />
+          )}
+        </div>
         <div className="time-label">
           <strong>+{hour}h</strong>
           <span>{time ? formatTime(time) : "—"}</span>
@@ -97,7 +110,11 @@ export function HeatmapControls(props: Props) {
       {props.truckStatus && (
         <p className="truck-status" aria-live="polite">
           <Icon name="truck" size={14} /> {props.truckStatus}
-          <span className="muted"> · the slider shows the 0–48 h forecast, which can outlast the trip</span>
+          <span className="muted">
+            {props.arrival && props.arrival.hours > maxHour
+              ? ` · arrives ${formatTime(props.arrival.time)}, after the ${maxHour} h forecast window`
+              : ` · the slider shows the 0–${maxHour} h forecast, which can outlast the trip`}
+          </span>
         </p>
       )}
 
@@ -108,6 +125,30 @@ export function HeatmapControls(props: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// A tick on the slider at the exact arrival time. The slider moves in whole
+// hours, so clicking it goes to the first hour at which the truck has arrived
+// (an ETA of +10.1 h jumps to +11, not +10, where it'd still be on the road).
+function EtaMark({ arrival, maxHour, onHour }: { arrival: Arrival; maxHour: number; onHour: (hour: number) => void }) {
+  const at = Math.min(1, Math.max(0, arrival.hours / maxHour));
+  const jumpTo = Math.min(maxHour, Math.ceil(arrival.hours - 1e-9));
+  const align = at < 0.12 ? "start" : at > 0.88 ? "end" : "center";
+  return (
+    <button
+      type="button"
+      className={`eta-mark ${align}`}
+      style={{ "--at": at } as React.CSSProperties}
+      onClick={() => onHour(jumpTo)}
+      title={`${arrival.routeName} arrives ${formatTime(arrival.time)}. Click to see the weather then.`}
+      aria-label={`Go to ${arrival.routeName}'s arrival, ${formatTime(arrival.time)}`}
+    >
+      <span className="eta-text">
+        <Icon name="flag" size={11} /> ETA {formatClock(arrival.time)}
+      </span>
+      <span className="eta-tick" />
+    </button>
   );
 }
 

@@ -12,6 +12,11 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 
 export const formatTime = (iso: string | Date) => timeFormat.format(new Date(iso));
 
+const clockFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+
+// Short form for tight spots, e.g. "Sat 6:08 AM".
+export const formatClock = (iso: string | Date) => clockFormat.format(new Date(iso)).replace(",", "");
+
 export const formatMiles = (miles: number) =>
   `${miles.toLocaleString(undefined, { maximumFractionDigits: miles < 10 ? 1 : 0 })} mi`;
 
