@@ -1,0 +1,348 @@
+{
+  "about": "Shared by frontend/src/risk.test.ts and backend/routing/tests/test_risk_cases.py: both implementations of the brief's risk rules must give these levels. `rules` is exactly what the server sends the browser (/api/rules); `cases` are written by hand from the brief. It lives with the frontend so neither app's build needs files from outside its own folder.",
+  "rules": {
+    "levels": [
+      {
+        "value": 0,
+        "label": "Low"
+      },
+      {
+        "value": 1,
+        "label": "Moderate"
+      },
+      {
+        "value": 2,
+        "label": "High"
+      },
+      {
+        "value": 3,
+        "label": "Severe"
+      },
+      {
+        "value": 4,
+        "label": "No Travel"
+      }
+    ],
+    "wind": {
+      "unit": "mph",
+      "edges": [25, 35, 45, 55],
+      "no_travel_inclusive": true
+    },
+    "rain": {
+      "unit": "in/hr",
+      "edges": [0.1, 0.25, 0.5, 1.0],
+      "no_travel_inclusive": false
+    },
+    "snow": {
+      "unit": "in/hr",
+      "edges": [0.5, 1.0, 2.0, 3.0],
+      "no_travel_inclusive": false
+    },
+    "load_rules": [
+      "≥55 mph → No Travel for any load",
+      "45–54 mph + >30,000 lb → No Travel",
+      "35–44 mph + >40,000 lb → Severe"
+    ],
+    "load_adjustments": [
+      {
+        "wind_level": 3,
+        "above_lbs": 30000,
+        "level": 4
+      },
+      {
+        "wind_level": 2,
+        "above_lbs": 40000,
+        "level": 3
+      }
+    ]
+  },
+  "cases": [
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Low"
+    },
+    {
+      "wind_mph": 24.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Low"
+    },
+    {
+      "wind_mph": 25,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 34.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 35,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 44.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 45,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 54.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 55,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 80,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.099,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Low"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.1,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.249,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.25,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.499,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0.5,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 1.0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 1.001,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0.49,
+      "load_lbs": 0,
+      "level": "Low"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0.5,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0.99,
+      "load_lbs": 0,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 1.0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 1.99,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 2.0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 3.0,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 0,
+      "rain_in_hr": 0,
+      "snow_in_hr": 3.01,
+      "load_lbs": 0,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 45,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 30000,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 45,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 30001,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 54.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 80000,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 35,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 40000,
+      "level": "High"
+    },
+    {
+      "wind_mph": 35,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 40001,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 44.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 80000,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 44.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 35000,
+      "level": "High"
+    },
+    {
+      "wind_mph": 34.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 80000,
+      "level": "Moderate"
+    },
+    {
+      "wind_mph": 55,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 24.9,
+      "rain_in_hr": 0,
+      "snow_in_hr": 0,
+      "load_lbs": 80000,
+      "level": "Low"
+    },
+    {
+      "wind_mph": 30,
+      "rain_in_hr": 0.3,
+      "snow_in_hr": 0,
+      "load_lbs": 0,
+      "level": "High"
+    },
+    {
+      "wind_mph": 10,
+      "rain_in_hr": 0,
+      "snow_in_hr": 2.5,
+      "load_lbs": 0,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 38,
+      "rain_in_hr": 0.12,
+      "snow_in_hr": 0,
+      "load_lbs": 42000,
+      "level": "Severe"
+    },
+    {
+      "wind_mph": 50,
+      "rain_in_hr": 0,
+      "snow_in_hr": 3.5,
+      "load_lbs": 20000,
+      "level": "No Travel"
+    },
+    {
+      "wind_mph": 20,
+      "rain_in_hr": 0.05,
+      "snow_in_hr": 0.4,
+      "load_lbs": 80000,
+      "level": "Low"
+    }
+  ]
+}

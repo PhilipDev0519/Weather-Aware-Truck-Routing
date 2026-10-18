@@ -1,0 +1,117 @@
+/* Risk badge and risk strip. */
+
+/* Risk badge: a label with a five-step meter. --risk is the level's colour. */
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--risk) 50%, transparent);
+  background: color-mix(in srgb, var(--risk) 16%, transparent);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.risk-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 10px;
+}
+
+.risk-meter i {
+  width: 3px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.risk-meter i:nth-child(1) {
+  height: 4px;
+}
+
+.risk-meter i:nth-child(2) {
+  height: 5.5px;
+}
+
+.risk-meter i:nth-child(3) {
+  height: 7px;
+}
+
+.risk-meter i:nth-child(4) {
+  height: 8.5px;
+}
+
+.risk-meter i:nth-child(5) {
+  height: 10px;
+}
+
+.risk-meter i.on {
+  background: var(--risk);
+}
+
+/* Severe and No Travel are filled in solid, so they can't be missed */
+.risk-badge[data-level="3"],
+.risk-badge[data-level="4"] {
+  background: var(--risk);
+  border-color: var(--risk);
+  color: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--risk) 22%, transparent);
+}
+
+.risk-badge[data-level="3"] .risk-meter i,
+.risk-badge[data-level="4"] .risk-meter i {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.risk-badge[data-level="3"] .risk-meter i.on,
+.risk-badge[data-level="4"] .risk-meter i.on {
+  background: #fff;
+}
+
+/* Risk strip: the route from start to finish, drawn to scale */
+.risk-strip {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--line);
+}
+
+.risk-strip span {
+  height: 100%;
+  min-width: 2px;
+}
+
+/* a hairline between stretches, so neighbouring levels stay distinct */
+.risk-strip span + span {
+  box-shadow: inset 1.5px 0 rgba(255, 255, 255, 0.55);
+}
+
+.risk-strip-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.comparison .risk-strip {
+  height: 8px;
+  margin-top: 5px;
+}
+
+.recommendation-strip {
+  margin: 12px 0 2px;
+}
+
+.recommendation-strip .recommendation-label {
+  margin-bottom: 6px;
+}
+
+.recommendation .risk-strip {
+  background: rgba(255, 255, 255, 0.18);
+}

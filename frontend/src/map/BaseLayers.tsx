@@ -39,7 +39,7 @@ const TILE_EVENTS = Object.fromEntries(
 ) as Record<Style, L.LeafletEventHandlerFnMap>;
 
 function BaseTiles({ style, ...props }: { style: Style; attribution?: string; pane?: string }) {
-  // The class lets night mode darken the street map (see .tiles-streets in styles.css).
+  // The class lets night mode darken the street map (see .tiles-streets in styles/map-markers.css).
   return (
     <TileLayer
       {...props}

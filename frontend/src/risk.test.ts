@@ -1,24 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { assess, bandRange, classify, riskStretches } from "./risk";
+import spec from "./test/risk-cases.json";
+import { LEVELS, assess, bandRange, classify, riskStretches } from "./risk";
 import { checkpoint } from "./test/routes";
 import type { Rules, Thresholds } from "./types";
 
-// Same tables the backend sends from /api/rules.
-const wind: Thresholds = { unit: "mph", edges: [25, 35, 45, 55], no_travel_inclusive: true };
-const rain: Thresholds = { unit: "in/hr", edges: [0.1, 0.25, 0.5, 1.0], no_travel_inclusive: false };
-const snow: Thresholds = { unit: "in/hr", edges: [0.5, 1.0, 2.0, 3.0], no_travel_inclusive: false };
+// The rules exactly as the server sends them from /api/rules; the backend's
+// tests check that, and give the same levels for the same shared cases.
+const rules = spec.rules as Rules;
+const { wind, rain, snow } = rules;
 
-const rules: Rules = {
-  levels: [],
-  wind,
-  rain,
-  snow,
-  load_rules: [],
-  load_adjustments: [
-    { wind_level: 3, above_lbs: 30_000, level: 4 },
-    { wind_level: 2, above_lbs: 40_000, level: 3 },
-  ],
-};
+describe("assess, against the cases shared with the backend", () => {
+  it("gives every case its level", () => {
+    expect(spec.cases.length).toBeGreaterThan(30);
+    for (const c of spec.cases) {
+      const level = assess(c.wind_mph, c.rain_in_hr, c.snow_in_hr, c.load_lbs, rules);
+      expect(LEVELS[level].label, JSON.stringify(c)).toBe(c.level);
+    }
+  });
+});
 
 describe("classify", () => {
   it("matches the backend on every band edge", () => {

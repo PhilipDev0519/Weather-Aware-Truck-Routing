@@ -1,0 +1,185 @@
+/* Design tokens (day and night), base elements and page containers. */
+
+/* Design tokens */
+:root {
+  --ink: #0b1a2e;
+  --ink-2: #2e3c50;
+  --muted: #5e6b7d;
+  --line: #e3e7ee;
+  --line-strong: #cbd3df;
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  /* American palette: navy, federal blue, flag red (decoration only: red means Severe on the map) */
+  --brand: #0a2342;
+  --brand-600: #13315c;
+  --brand-500: #1f4e8c;
+  --accent: #2563a8;
+  --accent-soft: #e8f0fa;
+  --brand-soft: #eaf0f7;
+  --flag-red: #b22234;
+  --flag-red-600: #8f1b2a;
+  --gold: #f2b632;
+  --danger: #c62828;
+  --danger-soft: #fdecea;
+  --warn: #8a5a00;
+  --warn-soft: #fff5dd;
+  --caution: #d08700;
+  --rest-note: #9a4a06;
+
+  /* --brand fills buttons and selected states; --brand-ink is brand-coloured text and
+     outlines on a surface; --brand-deep fills the large dark cards. They're the same navy
+     by day and split apart at night. --navy never changes (hero, light buttons on dark). */
+  --navy: #0a2342;
+  --brand-ink: var(--brand);
+  --brand-deep: var(--brand);
+  --brand-deep-2: var(--brand-600);
+  --on-accent: #ffffff;
+  --surface-2: #f8fafb;
+  --surface-glass: rgba(255, 255, 255, 0.95);
+  --input-hover: #b7c5ce;
+  --focus-ring: rgba(31, 78, 140, 0.15);
+  --row-selected: #f6f8fb;
+  --row-recommended: #edf2f9;
+  --skeleton: #e9eef2;
+  --skeleton-hi: #f4f7f9;
+  --map-bg: #e8ecef;
+  --route-label-line: #8796a1;
+  color-scheme: light;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 1px 2px rgba(15, 31, 41, 0.06), 0 1px 3px rgba(15, 31, 41, 0.06);
+  --shadow: 0 4px 12px rgba(15, 31, 41, 0.07), 0 1px 3px rgba(15, 31, 41, 0.05);
+  --shadow-lg: 0 18px 40px rgba(10, 35, 66, 0.14), 0 4px 12px rgba(10, 35, 66, 0.06);
+  --header-h: 64px;
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Night mode: set on <html> by index.html and src/theme.ts */
+:root[data-theme="dark"] {
+  --ink: #e6edf6;
+  --ink-2: #c3cddb;
+  --muted: #8f9db2;
+  --line: #233247;
+  --line-strong: #364a65;
+  --bg: #0b1220;
+  --surface: #121b2b;
+  --surface-2: #172234;
+  --brand: #2f64ad;
+  --brand-600: #3b72bd;
+  --brand-500: #6fa8ec;
+  --accent: #80b4f0;
+  --accent-soft: #1a2d47;
+  --brand-soft: #1a2a41;
+  --brand-ink: #9cc3f2;
+  --brand-deep: #15305a;
+  --brand-deep-2: #1c3c6b;
+  --on-accent: #0b1a2e;
+  --flag-red: #d23c4f;
+  --flag-red-600: #b22234;
+  --danger: #ff7a72;
+  --danger-soft: #3a1a1d;
+  --warn: #f2c14e;
+  --warn-soft: #362a0f;
+  --caution: #f2b632;
+  --rest-note: #f0a14a;
+  --surface-glass: rgba(18, 27, 43, 0.94);
+  --input-hover: #4a6080;
+  --focus-ring: rgba(111, 168, 236, 0.25);
+  --row-selected: #172235;
+  --row-recommended: #1a2a41;
+  --skeleton: #1a2536;
+  --skeleton-hi: #243246;
+  --map-bg: #1a222e;
+  --route-label-line: #4f627c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--brand-500);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.icon {
+  flex: none;
+  vertical-align: middle;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.container {
+  width: min(1180px, 100% - 40px);
+  margin-inline: auto;
+}
+
+.container.narrow {
+  width: min(820px, 100% - 40px);
+}
+
+.site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

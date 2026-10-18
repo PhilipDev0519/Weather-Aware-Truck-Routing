@@ -27,7 +27,7 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 | Origin, destination, departure, load weight | `TripForm.tsx`, `DepartureInput.tsx`, `serializers.py` | `TripForm.test.tsx`, `format.test.ts`, `test_api.py` |
 | 3 route options from a routing API | `route_options.py`, `services/ors.py`, `services/osrm.py` | `test_route_options.py`, `test_ors.py` |
 | Weather every 10 / 25 / 50 mi at the truck's ETA | `planner.py`, `services/weather.py` | `test_planner.py`, `test_weather.py` |
-| Risk thresholds and load rules | `risk.py` (mirrored in `risk.ts` for the map) | `test_risk.py`, `risk.test.ts` |
+| Risk thresholds and load rules | `risk.py` (mirrored in `risk.ts` for the map) | `test_risk.py`, `test_risk_cases.py`, `risk.test.ts`, shared `frontend/src/test/risk-cases.json` |
 | Recommendation (Severe → High → avg risk → time) | `recommend.py`, `RecommendationCard.tsx`, `RouteComparison.tsx` | `test_recommend.py`, `RecommendationCard.test.tsx`, `RouteComparison.test.tsx` |
 | Routes, checkpoints, risk, ETAs, summaries on a map | `map/RoutesLayer.tsx`, `CheckpointTable.tsx` | `CheckpointTable.test.tsx`, `RouteComparison.test.tsx` |
 | Corridor heatmap with a 0–48 h slider | `heatmap.py`, `map/heatmapFrames.ts`, `map/HeatmapControls.tsx` | `test_heatmap.py`, `heatmapFrames.test.ts`, `HeatmapControls.test.tsx` |
@@ -99,7 +99,7 @@ Django REST API ── route_options ── openrouteservice (truck roads) + OSR
 
 Load rules: ≥55 mph → No Travel for any load · 45–54 mph + >30,000 lb → No Travel · 35–44 mph + >40,000 lb → Severe. A checkpoint takes the **worst** of wind (after load rules), rain and snow, and the UI says why (e.g. *"Wind 38 mph with 45,000 lb load → Severe"*).
 
-**Band edges.** Neighbouring ranges share an edge, so each band is read as `[lower, next lower)`: 0.25 in/hr is High, 34.9 mph is Moderate. No Travel follows the table literally: wind ≥55 is inclusive, rain >1.00 and snow >3.0 are not. Load limits mean "more than" (exactly 30,000 lb doesn't trigger). Every edge has a test. Displayed values are rounded down, so 0.496 in/hr shows as 0.49 and never appears to be in the next band.
+**Band edges.** Neighbouring ranges share an edge, so each band is read as `[lower, next lower)`: 0.25 in/hr is High, 34.9 mph is Moderate. No Travel follows the table literally: wind ≥55 is inclusive, rain >1.00 and snow >3.0 are not. Load limits mean "more than" (exactly 30,000 lb doesn't trigger). Every edge has a test. The browser classifies the heatmap itself, so the rules exist in Python and TypeScript; both test suites run the same hand-written cases from `frontend/src/test/risk-cases.json` (every band edge, every load-rule boundary, worst-of combinations), and the backend checks that the rules in that file are exactly what it sends the browser, so the two can't drift apart unnoticed. Displayed values are rounded down, so 0.496 in/hr shows as 0.49 and never appears to be in the next band.
 
 ### Recommendation (`recommend.py`)
 Routes are ranked in the spec's order: **fewest Severe miles → fewest High miles → lowest average risk** (distance-weighted, Low 0 … No Travel 4) **→ shortest door-to-door time**. No Travel miles are compared first, so a route through a No Travel zone never beats one without. The planner shows the routes side by side in a comparison table, with these rules as numbered rows in this order. The recommended route's column is shaded, the best value in each row is bold, and the rule that picked the winner is marked. The server sends the exact rounded values it ranked on (`rank_keys`) and the deciding rule (`ranking.decided_by`), so the table can't disagree with the decision. The recommendation says it in one sentence, e.g. *"Route B has the fewest High miles: 0.0 mi, against 42.0 mi on Route A. Severe miles is the same on both."* or, when the weather is the same everywhere, *"Route A is the quickest: 10h 08m, against 11h 07m on Route B. Severe miles, High miles and average risk are the same on both."*
@@ -114,9 +114,9 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 
 | | Command |
 |---|---|
-| Backend tests (132) | `cd backend && python manage.py test routing` |
+| Backend tests (134) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (75, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (76, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.
@@ -194,6 +194,8 @@ frontend/src/
                      route comparison, checkpoint table, home page illustration
   map/               map panel, routes, heatmap drawing + controls (ETA mark), wind arrows,
                      truck marker
+  styles/            CSS by area (base, header and footer, pages, planner, results, risk, map, responsive),
+                     imported in cascade order by styles/index.css
   theme.ts           day / night mode: picks, saves and applies the theme
   risk.ts, api.ts, types.ts, *.test.ts(x)
 ```

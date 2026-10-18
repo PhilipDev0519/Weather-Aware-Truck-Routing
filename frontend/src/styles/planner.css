@@ -1,0 +1,303 @@
+/* Planner layout, sidebar and the trip form's fields. */
+
+/* Planner */
+.planner {
+  display: grid;
+  grid-template-columns: minmax(400px, 480px) 1fr;
+  height: calc(100vh - var(--header-h));
+  min-height: 560px;
+}
+
+.planner-sidebar {
+  overflow-y: auto;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 14px;
+}
+
+/* Before the first plan: the form card grows to the bottom of the sidebar,
+   less the "What you'll get" card, and spreads its rows evenly over the
+   height, so there's no empty space under the cards. Its natural height is
+   the minimum, so this never adds a scrollbar. */
+.planner-sidebar.is-empty {
+  display: flex;
+  flex-direction: column;
+}
+
+.planner-sidebar.is-empty > .panel {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.planner-sidebar.is-empty .trip-form {
+  flex: 1 0 auto;
+  align-content: space-between;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-head {
+  margin-bottom: 18px;
+}
+
+.panel-head h1 {
+  font-size: 20px;
+}
+
+.panel-head p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* Before the first plan, the form and the "What you'll get" card should fit
+   without the sidebar scrolling. On shorter screens they tighten in steps;
+   only the subtitle under "Plan a trip" is dropped (the map card says it too). */
+@media (max-height: 1000px) and (min-width: 901px) {
+  .planner-sidebar {
+    padding: 14px 18px;
+    gap: 12px;
+  }
+
+  .planner-sidebar .panel {
+    padding: 16px 18px;
+  }
+
+  .planner-sidebar .panel-head {
+    margin-bottom: 12px;
+  }
+
+  .planner-sidebar .trip-form {
+    gap: 10px;
+  }
+
+  /* smaller sample-trip chips, so all three share one row */
+  .planner-sidebar .examples {
+    gap: 5px;
+  }
+
+  .planner-sidebar .examples .chip-btn {
+    padding: 3px 8px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .planner-sidebar .empty-results {
+    padding: 12px 16px;
+  }
+
+  .planner-sidebar .empty-results h2 {
+    margin-bottom: 8px;
+  }
+
+  .planner-sidebar .empty-results ul {
+    gap: 7px;
+  }
+}
+
+@media (max-height: 820px) and (min-width: 901px) {
+  .planner-sidebar .panel-head p {
+    display: none;
+  }
+
+  .planner-sidebar .field input,
+  .planner-sidebar .dt-trigger,
+  .planner-sidebar .row .segmented {
+    height: 40px;
+  }
+
+  .planner-sidebar .check small {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .planner-sidebar .check > span {
+    min-width: 0;
+  }
+}
+
+@media (max-height: 730px) and (min-width: 901px) {
+  .planner-sidebar {
+    padding: 10px 18px;
+    gap: 8px;
+  }
+
+  .planner-sidebar .panel {
+    padding: 12px 18px;
+  }
+
+  .planner-sidebar .panel-head {
+    margin-bottom: 8px;
+  }
+
+  .planner-sidebar .trip-form {
+    gap: 8px;
+  }
+
+  .planner-sidebar .field {
+    gap: 4px;
+  }
+
+  .planner-sidebar .field input,
+  .planner-sidebar .dt-trigger,
+  .planner-sidebar .row .segmented {
+    height: 36px;
+  }
+
+  .planner-sidebar .btn-block {
+    padding: 9px;
+  }
+
+  .planner-sidebar .empty-results {
+    padding: 10px 14px;
+  }
+
+  .planner-sidebar .empty-results h2 {
+    margin-bottom: 6px;
+  }
+
+  .planner-sidebar .empty-results ul {
+    gap: 5px;
+    font-size: 13px;
+  }
+}
+
+.trip-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  position: relative;
+}
+
+.field label,
+.field .label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 38px 0 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14.5px;
+  color: inherit;
+  background: var(--surface);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.field input[type="number"] {
+  padding-right: 10px;
+}
+
+.field input:hover {
+  border-color: var(--input-hover);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.field input:focus + .pin-ok,
+.input-wrap:focus-within .input-icon {
+  color: var(--brand-500);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.row > *,
+.field input {
+  min-width: 0;
+}
+
+.row .segmented {
+  height: 44px;
+}
+
+.row .segmented button {
+  padding: 0 6px;
+}
+
+.pin-ok {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--brand-500);
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.suggestions li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.suggestions li:hover,
+.suggestions li.active {
+  background: var(--brand-soft);
+}

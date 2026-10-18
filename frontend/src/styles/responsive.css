@@ -1,0 +1,167 @@
+/* Layout changes for narrow screens, and reduced motion. Loaded last so it overrides the rest. */
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .steps,
+  .method-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    padding: 56px 0 104px;
+  }
+
+  .hero-grid,
+  .split,
+  .two-col {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .hero {
+    min-height: 0;
+  }
+
+  /* copy on top, the scene below it */
+  .hero {
+    padding-bottom: 330px;
+  }
+
+  .hero-scene {
+    top: auto;
+    height: 380px;
+  }
+
+  .hero::before {
+    background: linear-gradient(180deg, rgba(8, 26, 51, 1) 0%, rgba(8, 26, 51, 0.92) 55%, rgba(8, 26, 51, 0) 72%);
+  }
+
+  .hero-stats {
+    margin-top: 20px; /* don't cover the drivers */
+  }
+
+  .hero-stats li {
+    padding: 16px 18px;
+  }
+
+  .hero-stats strong {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  .hero-stats span {
+    font-size: 13px;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hero-stats li:nth-child(3) {
+    border-left: 0;
+  }
+
+  .hero-stats li:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .section {
+    padding: 60px 0;
+  }
+
+  .cta-band {
+    padding: 32px 28px;
+  }
+
+  .planner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 72vh;
+    height: auto;
+  }
+
+  .planner-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    overflow: visible;
+  }
+
+  .planner-map {
+    height: 72vh;
+  }
+
+  .heat-controls {
+    bottom: 34px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .heat-controls .heat-legend,
+  .heat-controls .probe {
+    display: none;
+  }
+
+  .heat-footer {
+    padding-top: 10px;
+  }
+
+  .time-label {
+    min-width: 0;
+  }
+
+  .route-label span:last-child {
+    display: none;
+  }
+
+  .risk-legend {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-cta,
+  .brand-text {
+    display: none;
+  }
+
+  .site-header-inner {
+    gap: 12px;
+  }
+
+  .steps,
+  .method-grid,
+  .stack-grid,
+  .footer-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .source-list li {
+    flex-direction: column;
+  }
+
+  .source-list span {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

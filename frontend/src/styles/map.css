@@ -1,0 +1,557 @@
+/* Map panel, route legend and the heatmap controls. */
+
+/* Map */
+.planner-map {
+  position: relative;
+  min-height: 0;
+}
+
+.map-panel,
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.map {
+  background: var(--map-bg);
+  font-family: inherit;
+}
+
+/* frames are already drawn at several pixels per cell; let the browser smooth the stretch */
+.heatmap-image {
+  image-rendering: auto;
+}
+
+.wind-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.leaflet-control-layers {
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--shadow) !important;
+}
+
+.map-loading {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--brand);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 22px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+  max-width: min(560px, calc(100% - 32px));
+}
+
+.map-loading small {
+  flex-basis: 100%;
+  text-align: center;
+  text-wrap: balance;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* On a phone, stay clear of the zoom and layer buttons on the right. */
+@media (max-width: 600px) {
+  .map-loading {
+    max-width: calc(100% - 128px);
+    font-size: 13px;
+  }
+}
+
+.map-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 800;
+  width: min(380px, calc(100% - 32px));
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 26px 26px 24px;
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.map-empty h3 {
+  font-size: 17px;
+}
+
+.map-empty p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.risk-legend {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 800;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  display: grid;
+  gap: 4px;
+  box-shadow: var(--shadow);
+}
+
+.risk-legend strong {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  margin-bottom: 2px;
+}
+
+.risk-legend i {
+  display: inline-block;
+  width: 18px;
+  height: 5px;
+  border-radius: 3px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.risk-legend.with-miles {
+  min-width: 168px;
+}
+
+.risk-legend span {
+  display: flex;
+  align-items: center;
+}
+
+.risk-legend b {
+  margin-left: auto;
+  padding-left: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* levels the route never reaches step back, so the ones it does stand out */
+.risk-legend span.none {
+  opacity: 0.45;
+}
+
+.risk-legend span.none b {
+  font-weight: 500;
+}
+
+.heat-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 800;
+  width: min(980px, calc(100% - 28px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 16px 20px 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.heat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+  color: var(--brand-ink);
+  font-size: 14px;
+}
+
+.toggle input {
+  accent-color: var(--brand);
+  width: 16px;
+  height: 16px;
+}
+
+.slider-row input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--brand);
+}
+
+.slider-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  /* the browser's range thumb, so marks line up with where it would sit */
+  --thumb: 16px;
+}
+
+.slider-wrap.has-eta {
+  padding-top: 20px;
+}
+
+.eta-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--at));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transform: translateX(-50%);
+  /* the slider stays draggable under the tick; only the label is a button target */
+  pointer-events: none;
+}
+
+.eta-mark .eta-text {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.eta-mark:hover .eta-text,
+.eta-mark:focus-visible .eta-text {
+  background: var(--brand);
+}
+
+.eta-mark .eta-tick {
+  width: 2px;
+  flex: 1;
+  max-height: 22px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* near the ends, keep the label inside the slider */
+.eta-mark.start {
+  align-items: flex-start;
+  transform: translateX(-1px);
+}
+
+.eta-mark.end {
+  align-items: flex-end;
+  transform: translateX(calc(-100% + 1px));
+}
+
+.play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(10, 35, 66, 0.3);
+}
+
+.play:hover:not(:disabled) {
+  background: var(--brand-600);
+}
+
+.time-label {
+  display: grid;
+  min-width: 150px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.label-hint {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.time-label strong {
+  font-size: 15px;
+  color: var(--brand-ink);
+}
+
+/* Under the slider: where the truck is and the legend on the left, the
+   readout for the spot under the cursor on the right. */
+.heat-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: stretch;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.heat-footer-main {
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.truck-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.truck-status-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.truck-status-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.truck-status-text strong {
+  font-weight: 700;
+}
+
+.truck-status-text .muted {
+  font-size: 12px;
+}
+
+.heat-legend {
+  display: grid;
+  gap: 8px;
+}
+
+/* the levels as one scale: five joined bars with their meaning underneath */
+.heat-scale {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.heat-scale li {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.heat-scale-bar {
+  height: 7px;
+  background: var(--level);
+  border-radius: 2px;
+}
+
+.heat-scale li:first-child .heat-scale-bar {
+  border-radius: 4px 2px 2px 4px;
+}
+
+.heat-scale li:last-child .heat-scale-bar {
+  border-radius: 2px 4px 4px 2px;
+}
+
+.heat-scale-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.heat-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.heat-notes span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.heat-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+}
+
+/* the readout: same size in every state, so the card doesn't jump */
+.probe {
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.probe-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.probe-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.probe-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+/* each reading is underlined in the colour of its own level */
+.probe-stats div {
+  display: grid;
+  gap: 2px;
+  padding-left: 8px;
+  border-left: 3px solid var(--level);
+}
+
+.probe-stats dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.probe-stats dd {
+  margin: 0;
+  display: grid;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.probe-stats dd strong {
+  font-size: 14px;
+}
+
+.probe-stats dd span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.probe-message {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: start;
+  gap: 10px;
+  border-style: dashed;
+}
+
+.probe-message > span:last-child {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.probe-message strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.probe-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.probe-message.muted .probe-icon {
+  background: var(--line);
+  color: var(--muted);
+}
+
+.probe-message.warn {
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+  background: color-mix(in srgb, var(--warn) 8%, var(--surface-2));
+}
+
+.probe-message.warn .probe-icon {
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: var(--warn);
+}
+
+/* a narrow map: the readout goes under the legend */
+@media (max-width: 1180px) {
+  .heat-footer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .probe {
+    min-height: 0;
+  }
+}

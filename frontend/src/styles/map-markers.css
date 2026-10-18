@@ -1,0 +1,180 @@
+/* Leaflet overrides, route labels and markers, night-mode tiles. */
+
+/* Leaflet overrides and custom markers */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-tooltip,
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+}
+
+.leaflet-bar {
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+
+/* Night mode on the map: darken the street tiles (terrain and satellite stay as they
+   are) and give Leaflet's own white controls the app's surfaces. */
+/* Filtered tile by tile: a filter on the whole layer is sometimes dropped by
+   the browser while tiles fade in or zoom, leaving bright squares. */
+:root[data-theme="dark"] .tiles-streets .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.7);
+}
+
+:root[data-theme="dark"] .leaflet-bar a,
+:root[data-theme="dark"] .leaflet-control-layers,
+:root[data-theme="dark"] .leaflet-tooltip,
+:root[data-theme="dark"] .leaflet-popup-content-wrapper,
+:root[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .leaflet-bar a {
+  border-bottom-color: var(--line);
+}
+
+:root[data-theme="dark"] .leaflet-bar a:hover {
+  background: var(--surface-2);
+}
+
+:root[data-theme="dark"] .leaflet-bar a.leaflet-disabled {
+  background: var(--surface);
+  color: var(--line-strong);
+}
+
+:root[data-theme="dark"] .leaflet-control-layers-separator {
+  border-top-color: var(--line);
+}
+
+:root[data-theme="dark"] .leaflet-control-layers-toggle {
+  filter: invert(1) brightness(1.4);
+}
+
+:root[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(18, 27, 43, 0.8);
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--brand-500);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-top::before {
+  border-top-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-bottom::before {
+  border-bottom-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-left::before {
+  border-left-color: var(--surface);
+}
+
+:root[data-theme="dark"] .leaflet-tooltip-right::before {
+  border-right-color: var(--surface);
+}
+
+.route-label {
+  transform: translate(-50%, -120%);
+  background: var(--surface);
+  border: 1.5px solid var(--route-label-line);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  display: inline-grid;
+  box-shadow: var(--shadow);
+  color: var(--ink-2);
+}
+
+.route-label .rest-note {
+  color: var(--rest-note);
+  font-weight: 700;
+}
+
+.route-label b {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.route-label.selected {
+  border-color: var(--brand-ink);
+  box-shadow:
+    0 0 0 2px rgba(10, 35, 66, 0.15),
+    var(--shadow);
+}
+
+.route-label.recommended b {
+  color: var(--brand-500);
+}
+
+.endpoint {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.endpoint.origin {
+  background: var(--brand-500);
+}
+
+.endpoint.destination {
+  background: var(--brand);
+}
+
+.truck {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--brand-ink);
+  border-radius: 50%;
+  border: 2px solid var(--brand-ink);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.eta-tag {
+  transform: translate(10px, -50%);
+  background: var(--surface-glass);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-tooltip {
+  display: grid;
+  gap: 3px;
+  font-size: 12.5px;
+}
+
+.cp-title {
+  font-weight: 700;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cp-reason {
+  color: var(--danger);
+}
