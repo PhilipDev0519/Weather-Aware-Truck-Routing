@@ -1,3 +1,5 @@
+import type { Weather } from "./types";
+
 export function formatDuration(hours: number): string {
   const minutes = Math.round(hours * 60);
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
@@ -78,3 +80,12 @@ const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
 // 300 -> "NW"
 export const compass = (degrees: number) => COMPASS[Math.round((((degrees % 360) + 360) % 360) / 45) % 8];
+
+// The gust as shown next to the sustained wind, or null when it adds nothing:
+// missing from the forecast, or no stronger than the wind once both are rounded.
+export function gustLabel(weather: Pick<Weather, "wind_mph" | "gust_mph">): string | null {
+  const gust = weather.gust_mph;
+  if (gust == null || !Number.isFinite(gust)) return null;
+  const shown = fixedDown(gust, 0);
+  return Number(shown) > Number(fixedDown(weather.wind_mph, 0)) ? shown : null;
+}

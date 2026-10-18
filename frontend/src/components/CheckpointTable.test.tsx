@@ -21,6 +21,21 @@ describe("CheckpointTable", () => {
     expect(cells[5]).toBe("High");
   });
 
+  it("leaves the gust out when it's missing or no stronger than the wind", () => {
+    const weather = { wind_mph: 12.4, wind_from_deg: 200, rain_in_hr: 0, snow_in_hr: 0, temp_f: 50 };
+    const cps = [
+      checkpoint({ index: 0, weather: { ...weather, gust_mph: null } }),
+      checkpoint({ index: 1, mile: 25, weather: { ...weather, gust_mph: 12.9 } }),
+      checkpoint({ index: 2, mile: 50, weather: { ...weather, gust_mph: 19.2 } }),
+    ];
+    render(<CheckpointTable route={route({ checkpoints: cps })} onFocus={() => {}} />);
+    const winds = screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((r) => r.children[2].textContent);
+    expect(winds).toEqual(["12", "12", "12(19)"]);
+  });
+
   it("marks checkpoints past the forecast as Unknown", () => {
     const cp = checkpoint({ weather: null, level: null, reasons: ["No forecast available for this time"] });
     render(<CheckpointTable route={route({ checkpoints: [cp] })} onFocus={() => {}} />);

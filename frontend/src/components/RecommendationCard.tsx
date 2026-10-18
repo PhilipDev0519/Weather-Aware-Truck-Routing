@@ -1,5 +1,6 @@
 import { formatClock, formatDuration, formatMiles } from "../format";
 import type { RouteOption } from "../types";
+import { RiskStrip } from "./RiskStrip";
 
 interface Props {
   route: RouteOption;
@@ -24,6 +25,11 @@ export function RecommendationCard({ route, reason }: Props) {
       </div>
 
       <p className="recommendation-reason">{reason}</p>
+
+      <div className="recommendation-strip">
+        <p className="recommendation-label">Risk along the route</p>
+        <RiskStrip route={route} scale />
+      </div>
 
       <dl className="recommendation-facts">
         <div>

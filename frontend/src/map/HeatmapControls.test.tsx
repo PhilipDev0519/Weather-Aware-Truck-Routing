@@ -145,8 +145,25 @@ describe("HeatmapControls", () => {
   it("reads conditions under the cursor with the load rules applied", () => {
     setup({ probe: { x: 0.5, y: 0.5 } });
     // 38 mph is High, but Severe for more than 40,000 lb
-    const readout = screen.getByText(/Wind 38 mph from NW/);
-    expect(readout.querySelector("strong")?.textContent).toBe("Severe");
+    const readout = screen.getByText("Conditions here").closest(".probe")!;
+    expect(readout.querySelector(".risk-badge")?.textContent).toBe("Severe");
+    expect(screen.getByText("38 mph").parentElement?.textContent).toBe("38 mphfrom NW");
+  });
+
+  it("asks for a hover before there's anything to read", () => {
+    setup({ probe: null });
+    expect(screen.getByText("Hover the map")).toBeTruthy();
+  });
+
+  it("says when the cursor is outside the forecast corridor", () => {
+    setup({ probe: { x: 3, y: 0.5 } });
+    expect(screen.getByText("Outside the forecast corridor")).toBeTruthy();
+    expect(screen.queryByText("Conditions here")).toBeNull();
+  });
+
+  it("says when the corridor has no forecast for this hour, rather than calling it outside", () => {
+    setup({ hour: 45, frame: 45, probe: { x: 0.5, y: 0.5 } });
+    expect(screen.getByText("No forecast for this hour")).toBeTruthy();
   });
 
   it("counts the hours from the departure, not from the forecast's first hour", () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { assess, bandRange, classify } from "./risk";
+import { assess, bandRange, classify, riskStretches } from "./risk";
+import { checkpoint } from "./test/routes";
 import type { Rules, Thresholds } from "./types";
 
 // Same tables the backend sends from /api/rules.
@@ -61,5 +62,29 @@ describe("assess", () => {
   it("takes the worst of wind, rain and snow", () => {
     expect(assess(10, 0.3, 0.6, 20_000, rules)).toBe(2);
     expect(assess(38, 0.12, 0, 45_000, rules)).toBe(3);
+  });
+});
+
+describe("riskStretches", () => {
+  it("gives each checkpoint the road halfway to its neighbours and merges equal levels", () => {
+    const cps = [
+      checkpoint({ mile: 0, level: 0 }),
+      checkpoint({ mile: 25, level: 0 }),
+      checkpoint({ mile: 50, level: 2 }),
+      checkpoint({ mile: 75, level: 3 }),
+      checkpoint({ mile: 90, level: null }),
+    ];
+    expect(riskStretches(cps, 90)).toEqual([
+      { from: 0, to: 37.5, level: 0 },
+      { from: 37.5, to: 62.5, level: 2 },
+      { from: 62.5, to: 82.5, level: 3 },
+      { from: 82.5, to: 90, level: null },
+    ]);
+  });
+
+  it("adds up to the route length", () => {
+    const cps = [0, 10, 20, 26].map((mile, i) => checkpoint({ mile, level: (i % 2) as 0 | 1 }));
+    const total = riskStretches(cps, 26).reduce((sum, s) => sum + s.to - s.from, 0);
+    expect(total).toBe(26);
   });
 });

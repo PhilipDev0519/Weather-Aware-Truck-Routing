@@ -76,7 +76,8 @@ export function PlannerPage() {
 
   return (
     <div className="planner">
-      <aside className="planner-sidebar">
+      {/* before the first plan, the form and the "What you'll get" card fill the sidebar's height */}
+      <aside className={`planner-sidebar${!plan && !loading ? " is-empty" : ""}`}>
         {plan && !editing && <TripSummary plan={plan} onEdit={() => setEditing(true)} />}
         {/* kept mounted while collapsed, so "Edit trip" brings back what was entered */}
         <section className="panel" hidden={!!plan && !editing}>

@@ -94,7 +94,7 @@ export function MapPanel({ plan, heatmap, selectedId, onSelect, focus }: Props) 
         {focus && <FocusPopup focus={focus} />}
       </MapContainer>
 
-      <RiskLegend />
+      <RiskLegend route={selected} />
 
       {plan && (
         <HeatmapControls

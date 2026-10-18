@@ -1,6 +1,7 @@
-import { memo } from "react";
-import { fixedDown } from "../format";
-import { levelColor, levelLabel } from "../risk";
+import { memo, type CSSProperties } from "react";
+import { fixedDown, gustLabel } from "../format";
+import { levelColor } from "../risk";
+import { RiskBadge } from "./RiskBadge";
 import type { Checkpoint, RouteOption } from "../types";
 
 interface Props {
@@ -37,7 +38,13 @@ export const CheckpointTable = memo(function CheckpointTable({ route, onFocus }:
           </thead>
           <tbody>
             {route.checkpoints.map((cp) => (
-              <tr key={cp.index} onClick={() => onFocus(cp)} title={cp.reasons.join("\n") || "Low risk"}>
+              <tr
+                key={cp.index}
+                className={cp.level !== null && cp.level >= 2 ? "risky" : undefined}
+                style={{ "--risk": levelColor(cp.level) } as CSSProperties}
+                onClick={() => onFocus(cp)}
+                title={cp.reasons.join("\n") || "Low risk"}
+              >
                 <td>{cp.mile.toFixed(0)}</td>
                 <td>
                   {clockFormat.format(new Date(cp.eta))}
@@ -47,7 +54,7 @@ export const CheckpointTable = memo(function CheckpointTable({ route, onFocus }:
                   <>
                     <td>
                       {fixedDown(cp.weather.wind_mph, 0)}
-                      {cp.weather.gust_mph !== null && <small>({fixedDown(cp.weather.gust_mph, 0)})</small>}
+                      {gustLabel(cp.weather) && <small>({gustLabel(cp.weather)})</small>}
                     </td>
                     <td>{fixedDown(cp.weather.rain_in_hr, 2)}</td>
                     <td>{fixedDown(cp.weather.snow_in_hr, 2)}</td>
@@ -58,9 +65,7 @@ export const CheckpointTable = memo(function CheckpointTable({ route, onFocus }:
                   </td>
                 )}
                 <td>
-                  <span className="chip" style={{ background: levelColor(cp.level) }}>
-                    {levelLabel(cp.level)}
-                  </span>
+                  <RiskBadge level={cp.level} />
                 </td>
               </tr>
             ))}

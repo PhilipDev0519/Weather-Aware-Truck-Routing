@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import type { HeatmapResponse } from "../types";
 
-const MIN_SPACING_PX = 30;
+const MIN_SPACING_PX = 44;
 
 // All arrows are drawn on one canvas that's redrawn when the hour or the view
 // changes. (One Leaflet marker per arrow made scrubbing through hours slow.)
@@ -77,11 +77,13 @@ class ArrowCanvas extends L.Layer {
       addArrow(path, p.x, p.y, from, mph);
     });
 
-    ctx.strokeStyle = "rgba(255,255,255,0.9)";
-    ctx.lineWidth = 4.5;
+    // A thin halo keeps them readable on any basemap without drawing the eye
+    // away from the routes.
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3.5;
     ctx.stroke(path);
-    ctx.strokeStyle = "#16313b";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(22,49,59,0.8)";
+    ctx.lineWidth = 1.6;
     ctx.stroke(path);
   }
 }
@@ -89,13 +91,13 @@ class ArrowCanvas extends L.Layer {
 // The data says where the wind comes *from*; the arrow points where it goes.
 // Stronger wind gets a longer arrow.
 function addArrow(path: Path2D, x: number, y: number, fromDeg: number, mph: number) {
-  const length = 11 + 9 * Math.min(1, mph / 40);
+  const length = 10 + 8 * Math.min(1, mph / 40);
   const heading = ((fromDeg + 180) * Math.PI) / 180;
   const dx = Math.sin(heading);
   const dy = -Math.cos(heading);
   const tipX = x + (dx * length) / 2;
   const tipY = y + (dy * length) / 2;
-  const head = 5;
+  const head = 4.5;
 
   path.moveTo(x - (dx * length) / 2, y - (dy * length) / 2);
   path.lineTo(tipX, tipY);

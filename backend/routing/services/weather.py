@@ -1,8 +1,9 @@
 """Hourly forecasts from Open-Meteo.
 
 Wind in the hourly data is the value at that moment; rain, showers and
-snowfall are totals for the hour *before* the timestamp. Totals per hour are
-already per-hour rates, so after unit conversion they're in in/hr.
+snowfall are totals for the hour *before* the timestamp, and gusts the
+strongest in that hour. Totals per hour are already per-hour rates, so after
+unit conversion they're in in/hr.
 """
 
 from __future__ import annotations
@@ -77,9 +78,14 @@ class Forecast:
         snow = self._get(self.snow_in, precip_i)
         if wind is None or rain is None or snow is None:
             return None
+        # Gusts are the strongest of the hour *before* the timestamp, like the
+        # precipitation totals, so they're read from the same hour. A gust is
+        # never below the sustained wind, but the two come from different
+        # moments (and models), so one can dip under the other: clamp it.
+        gust = self._get(self.gust_mph, precip_i)
         return Conditions(
             wind,
-            self._get(self.gust_mph, wind_i),
+            None if gust is None else max(gust, wind),
             rain,
             snow,
             self._get(self.temp_f, wind_i),

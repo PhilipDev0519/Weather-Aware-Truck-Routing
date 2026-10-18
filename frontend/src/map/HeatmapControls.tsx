@@ -1,6 +1,8 @@
-import { Icon } from "../components/Icon";
+import type { CSSProperties } from "react";
+import { Icon, type IconName } from "../components/Icon";
+import { RiskBadge } from "../components/RiskBadge";
 import { compass, fixedDown, formatClock, formatTime } from "../format";
-import { LEVELS, assess, bandRange } from "../risk";
+import { LEVELS, assess, bandRange, classify } from "../risk";
 import type { HeatLayer, HeatmapResponse, RiskLevel } from "../types";
 import type { HeatGrid } from "./heatmapFrames";
 
@@ -75,7 +77,12 @@ export function HeatmapControls(props: Props) {
         </div>
         {loading && <span className="muted">Loading forecast…</span>}
         {error && <span className="error-text">{error}</span>}
-        {noForecast && <span className="muted">No forecast this far ahead</span>}
+        {noForecast && (
+          <span className="heat-flag">
+            <Icon name="clock" size={13} />
+            No forecast this far ahead
+          </span>
+        )}
       </div>
 
       <div className="heat-row slider-row">
@@ -109,20 +116,26 @@ export function HeatmapControls(props: Props) {
         </div>
       </div>
 
-      {props.truckStatus && (
-        <p className="truck-status" aria-live="polite">
-          <Icon name="truck" size={14} /> {props.truckStatus}
-          <span className="muted">
-            {props.arrival && props.arrival.hours > maxHour
-              ? ` · arrives ${formatTime(props.arrival.time)}, after the ${maxHour} h forecast window`
-              : ` · the slider shows the 0–${maxHour} h forecast, which can outlast the trip`}
-          </span>
-        </p>
-      )}
-
       {data && grid && (
-        <div className="heat-row legend-row">
-          <HeatLegend data={data} layer={layer} loadLbs={props.loadLbs} />
+        <div className="heat-footer">
+          <div className="heat-footer-main">
+            {props.truckStatus && (
+              <p className="truck-status" aria-live="polite">
+                <span className="truck-status-icon">
+                  <Icon name="truck" size={15} />
+                </span>
+                <span className="truck-status-text">
+                  <strong>{props.truckStatus}</strong>
+                  <span className="muted">
+                    {props.arrival && props.arrival.hours > maxHour
+                      ? `Arrives ${formatTime(props.arrival.time)}, after the ${maxHour} h forecast window`
+                      : `The slider shows the 0–${maxHour} h forecast, which can outlast the trip`}
+                  </span>
+                </span>
+              </p>
+            )}
+            <HeatLegend data={data} layer={layer} loadLbs={props.loadLbs} />
+          </div>
           <ProbeReadout grid={grid} hour={frame} probe={probe} loadLbs={props.loadLbs} />
         </div>
       )}
@@ -154,23 +167,45 @@ function EtaMark({ arrival, maxHour, onHour }: { arrival: Arrival; maxHour: numb
   );
 }
 
+// The levels as one scale, lowest to highest, with what each means on this layer.
 function HeatLegend({ data, layer, loadLbs }: { data: HeatmapResponse; layer: HeatLayer; loadLbs: number }) {
   return (
     <div className="heat-legend">
-      {LEVELS.map((level, i) => (
-        <span key={level.label} className="legend-item">
-          <span className="swatch" style={{ background: level.color }} />
-          {layer === "risk" ? level.label : bandRange(i as RiskLevel, data.rules[layer])}
-        </span>
-      ))}
-      {layer === "risk" && <span className="muted">· for a {loadLbs.toLocaleString()} lb load</span>}
-      {(layer === "risk" || layer === "wind") && <span className="muted">· arrows show where the wind blows</span>}
+      <ol className="heat-scale" aria-label={`${layer === "risk" ? "Risk" : LAYER_TITLE[layer]} levels`}>
+        {LEVELS.map((level, i) => (
+          <li key={level.label} style={{ "--level": level.color } as CSSProperties}>
+            <span className="heat-scale-bar" />
+            <span className="heat-scale-label">
+              {layer === "risk" ? level.label : bandRange(i as RiskLevel, data.rules[layer])}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <div className="heat-notes">
+        {layer === "risk" ? (
+          <span>
+            <Icon name="package" size={12} /> Rated for a {loadLbs.toLocaleString()} lb load
+          </span>
+        ) : (
+          <span>
+            <Icon name={layer} size={12} /> {LAYER_TITLE[layer]} only
+          </span>
+        )}
+        {(layer === "risk" || layer === "wind") && (
+          <span>
+            <Icon name="wind" size={12} /> Arrows show where the wind blows
+          </span>
+        )}
+      </div>
     </div>
   );
 }
 
+const LAYER_TITLE: Record<Exclude<HeatLayer, "risk">, string> = { wind: "Wind", rain: "Rain", snow: "Snow" };
+
 // Reads the same blended values the heatmap is drawn from, so the text always
-// agrees with the colour under the cursor.
+// agrees with the colour under the cursor. It keeps the same size in every
+// state, so the card doesn't jump as the cursor moves.
 function ProbeReadout({
   grid,
   hour,
@@ -182,15 +217,85 @@ function ProbeReadout({
   probe: ProbePoint | null;
   loadLbs: number;
 }) {
-  if (probe === null) return <span className="probe muted">Hover the map for local conditions</span>;
-  const c = grid.probe(hour, probe.x, probe.y);
-  if (c === null) return <span className="probe muted">No forecast here</span>;
-  const level = assess(c.wind, c.rain, c.snow, loadLbs, grid.data.rules);
+  if (probe === null) {
+    return (
+      <ProbeMessage icon="pin" title="Hover the map">
+        to read the weather at any spot for this hour
+      </ProbeMessage>
+    );
+  }
+  const result = grid.probe(hour, probe.x, probe.y);
+  if (result.kind === "outside") {
+    return (
+      <ProbeMessage icon="route" title="Outside the forecast corridor" tone="muted">
+        Forecasts are only fetched along the routes. Move closer to them.
+      </ProbeMessage>
+    );
+  }
+  if (result.kind === "no-forecast") {
+    return (
+      <ProbeMessage icon="clock" title="No forecast for this hour" tone="warn">
+        This hour is past the end of the forecast. Move the slider back.
+      </ProbeMessage>
+    );
+  }
+
+  const c = result.conditions;
+  const { rules } = grid.data;
+  const level = assess(c.wind, c.rain, c.snow, loadLbs, rules);
+  // Each reading in the colour of its own level, so it's clear which one sets the risk.
+  const factors = [
+    {
+      key: "wind",
+      label: "Wind",
+      value: `${fixedDown(c.wind, 0)} mph`,
+      detail: c.windFrom !== null ? `from ${compass(c.windFrom)}` : "",
+      level: assess(c.wind, 0, 0, loadLbs, rules),
+    },
+    { key: "rain", label: "Rain", value: fixedDown(c.rain, 2), detail: "in/hr", level: classify(c.rain, rules.rain) },
+    { key: "snow", label: "Snow", value: fixedDown(c.snow, 2), detail: "in/hr", level: classify(c.snow, rules.snow) },
+  ];
   return (
-    <span className="probe">
-      Wind {fixedDown(c.wind, 0)} mph{c.windFrom !== null && ` from ${compass(c.windFrom)}`} · Rain{" "}
-      {fixedDown(c.rain, 2)} · Snow {fixedDown(c.snow, 2)} in/hr ·{" "}
-      <strong style={{ color: LEVELS[level].color }}>{LEVELS[level].label}</strong>
-    </span>
+    <div className="probe" aria-live="polite">
+      <div className="probe-head">
+        <span className="probe-title">Conditions here</span>
+        <RiskBadge level={level} />
+      </div>
+      <dl className="probe-stats">
+        {factors.map((f) => (
+          <div key={f.key} style={{ "--level": LEVELS[f.level].color } as CSSProperties}>
+            <dt>{f.label}</dt>
+            <dd>
+              <strong>{f.value}</strong>
+              <span>{f.detail}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function ProbeMessage({
+  icon,
+  title,
+  tone,
+  children,
+}: {
+  icon: IconName;
+  title: string;
+  tone?: "muted" | "warn";
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`probe probe-message${tone ? ` ${tone}` : ""}`} aria-live="polite">
+      <span className="probe-icon">
+        <Icon name={icon} size={16} />
+      </span>
+      <span>
+        <strong>{title}</strong>
+        <span>{children}</span>
+      </span>
+    </div>
   );
 }

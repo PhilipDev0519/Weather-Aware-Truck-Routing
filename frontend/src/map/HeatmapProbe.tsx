@@ -20,8 +20,8 @@ export function HeatmapProbe({ data, onProbe }: { data: HeatmapResponse; onProbe
       frame.current = requestAnimationFrame(() => {
         const x = ((e.latlng.lng - west) / (east - west)) * data.cols;
         const y = ((yNorth - mercatorY(e.latlng.lat)) / (yNorth - ySouth)) * data.rows;
-        const inside = x >= 0 && x < data.cols && y >= 0 && y < data.rows;
-        onProbe(inside ? { x, y } : null);
+        // Off the grid counts as hovering too: the readout says it's outside the corridor.
+        onProbe({ x, y });
       });
     },
     mouseout() {

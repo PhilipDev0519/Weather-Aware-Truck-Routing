@@ -2,12 +2,20 @@ import L from "leaflet";
 import { memo, useMemo, useState } from "react";
 import { CircleMarker, Marker, Polyline, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import { iconSvg } from "../components/Icon";
-import { compass, fixedDown, formatDuration, formatMiles, formatTime } from "../format";
-import { levelColor, levelLabel } from "../risk";
-import type { Checkpoint, LatLng, PlanResponse, RouteOption } from "../types";
+import { RiskBadge } from "../components/RiskBadge";
+import { compass, fixedDown, formatDuration, formatMiles, formatTime, gustLabel } from "../format";
+import { levelColor } from "../risk";
+import type { Checkpoint, LatLng, PlanResponse, RiskLevel, RouteOption } from "../types";
 
 const OTHER_ROUTE = { color: "#526170", weight: 5, opacity: 0.5 };
 const OUTLINE = { color: "#0b2e3b", weight: 10, opacity: 0.85 };
+// The riskier the stretch, the heavier the line; High and above also get a
+// soft glow, so bad weather is the first thing the eye lands on.
+const SEGMENT_WEIGHT = [6, 6, 7, 8, 8];
+const GLOW = { weight: 18, opacity: 0.3 };
+const segmentWeight = (level: RiskLevel | null) => (level === null ? 5 : SEGMENT_WEIGHT[level]);
+const isRisky = (level: RiskLevel | null) => level !== null && level >= 2;
+const checkpointRadius = (level: RiskLevel | null, dense: boolean) => (dense ? 4.5 : 6) + (isRisky(level) ? 1.5 : 0);
 
 // The selected route gets the full summary; the others a compact tag, so three
 // labels fit on the map without covering each other.
@@ -40,9 +48,7 @@ export function CheckpointTooltip({ cp, routeName }: { cp: Checkpoint; routeName
   return (
     <div className="cp-tooltip">
       <div className="cp-title">
-        <span className="chip" style={{ background: levelColor(cp.level) }}>
-          {levelLabel(cp.level)}
-        </span>
+        <RiskBadge level={cp.level} />
         {routeName} · mile {cp.mile.toFixed(0)}
       </div>
       <div>ETA {formatTime(cp.eta)}</div>
@@ -50,8 +56,8 @@ export function CheckpointTooltip({ cp, routeName }: { cp: Checkpoint; routeName
         <div className="cp-weather">
           Wind {fixedDown(cp.weather.wind_mph, 0)} mph
           {cp.weather.wind_from_deg != null && ` from ${compass(cp.weather.wind_from_deg)}`}
-          {cp.weather.gust_mph !== null && ` (gust ${fixedDown(cp.weather.gust_mph, 0)})`} · Rain{" "}
-          {fixedDown(cp.weather.rain_in_hr, 2)} in/hr · Snow {fixedDown(cp.weather.snow_in_hr, 2)} in/hr
+          {gustLabel(cp.weather) && ` (gust ${gustLabel(cp.weather)})`} · Rain {fixedDown(cp.weather.rain_in_hr, 2)}{" "}
+          in/hr · Snow {fixedDown(cp.weather.snow_in_hr, 2)} in/hr
           {cp.weather.temp_f !== null && ` · ${cp.weather.temp_f}°F`}
         </div>
       ) : null}
@@ -214,6 +220,17 @@ export const RoutesLayer = memo(function RoutesLayer({ plan, selectedId, onSelec
         />
       ))}
 
+      {selected.segments.map(
+        (segment, i) =>
+          isRisky(segment.level) && (
+            <Polyline
+              key={`${selected.id}-glow-${i}`}
+              positions={segment.coords}
+              pathOptions={{ ...GLOW, color: levelColor(segment.level) }}
+              interactive={false}
+            />
+          ),
+      )}
       <Polyline
         key={`outline-${selected.id}`}
         positions={selected.geometry}
@@ -224,7 +241,7 @@ export const RoutesLayer = memo(function RoutesLayer({ plan, selectedId, onSelec
         <Polyline
           key={`${selected.id}-seg-${i}`}
           positions={segment.coords}
-          pathOptions={{ color: levelColor(segment.level), weight: 6, opacity: 1 }}
+          pathOptions={{ color: levelColor(segment.level), weight: segmentWeight(segment.level), opacity: 1 }}
           interactive={false}
         />
       ))}
@@ -248,7 +265,7 @@ export const RoutesLayer = memo(function RoutesLayer({ plan, selectedId, onSelec
         <CircleMarker
           key={`${selected.id}-cp-${cp.index}`}
           center={[cp.lat, cp.lon]}
-          radius={selected.checkpoints.length > 40 ? 4.5 : 6}
+          radius={checkpointRadius(cp.level, selected.checkpoints.length > 40)}
           pathOptions={{ color: "#fff", weight: 2, fillColor: levelColor(cp.level), fillOpacity: 1 }}
         >
           <Tooltip direction="top">

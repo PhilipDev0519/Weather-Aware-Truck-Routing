@@ -157,7 +157,10 @@ export function TripForm({ loading, onSubmit }: Props) {
         <input type="checkbox" checked={restBreaks} onChange={(e) => setRestBreaks(e.target.checked)} />
         <span>
           Include required rest breaks
-          <small>30 min after 8 h of driving, 10 h off after 11 h (FMCSA hours of service)</small>
+          {/* the title shows it in full where short screens cut it to one line */}
+          <small title="30 min after 8 h of driving, 10 h off after 11 h (FMCSA hours of service)">
+            30 min after 8 h of driving, 10 h off after 11 h (FMCSA hours of service)
+          </small>
         </span>
       </label>
 

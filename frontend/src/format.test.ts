@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compass, fixedDown, formatDuration, formatRelative, parseTime } from "./format";
+import { compass, fixedDown, formatDuration, formatRelative, gustLabel, parseTime } from "./format";
 
 describe("fixedDown", () => {
   it("never rounds up into the next band", () => {
@@ -62,5 +62,18 @@ describe("formatRelative", () => {
 
   it("flags times already passed", () => {
     expect(formatRelative(at(-120), now)).toBe("2 h ago");
+  });
+});
+
+describe("gustLabel", () => {
+  it("shows a gust only when it's stronger than the wind as displayed", () => {
+    expect(gustLabel({ wind_mph: 7.2, gust_mph: 8.9 })).toBe("8");
+    expect(gustLabel({ wind_mph: 7.2, gust_mph: 7.9 })).toBeNull(); // both read 7
+    expect(gustLabel({ wind_mph: 7.2, gust_mph: 5 })).toBeNull();
+  });
+
+  it("copes with a missing gust", () => {
+    expect(gustLabel({ wind_mph: 7, gust_mph: null })).toBeNull();
+    expect(gustLabel({ wind_mph: 7, gust_mph: undefined as unknown as null })).toBeNull();
   });
 });

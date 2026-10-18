@@ -1,5 +1,6 @@
 import { formatClock, formatDuration, formatMiles } from "../format";
-import { LEVELS, UNKNOWN_COLOR, levelColor, levelLabel } from "../risk";
+import { RiskBadge } from "./RiskBadge";
+import { RiskStrip } from "./RiskStrip";
 import type { CriterionId, Ranking, RouteOption } from "../types";
 
 // The routes side by side. The rows are the ranking rules in the brief's
@@ -28,25 +29,6 @@ function describeStops({ stops }: RouteOption): string {
   if (stops.breaks) parts.push(stops.breaks === 1 ? `30${NBSP}min break` : `${stops.breaks} × 30${NBSP}min breaks`);
   if (stops.rests) parts.push(stops.rests === 1 ? `10${NBSP}h rest` : `${stops.rests} × 10${NBSP}h rests`);
   return parts.length ? parts.join(", ") : "None";
-}
-
-function RiskBar({ route }: { route: RouteOption }) {
-  const total = route.distance_miles || 1;
-  const parts = [
-    ...LEVELS.map((l) => ({ label: l.label, color: l.color, miles: route.risk_miles[l.key] })),
-    { label: "Unknown", color: UNKNOWN_COLOR, miles: route.risk_miles.unknown },
-  ].filter((p) => p.miles > 0);
-  return (
-    <div className="risk-bar" role="img" aria-label={parts.map((p) => `${p.label} ${formatMiles(p.miles)}`).join(", ")}>
-      {parts.map((p) => (
-        <span
-          key={p.label}
-          style={{ width: `${(100 * p.miles) / total}%`, background: p.color }}
-          title={`${p.label}: ${formatMiles(p.miles)}`}
-        />
-      ))}
-    </div>
-  );
 }
 
 interface Props {
@@ -133,16 +115,15 @@ export function RouteComparison({ routes, ranking, selectedId, onSelect }: Props
           <tr>
             <th scope="row">Worst weather</th>
             {cells((route) => (
-              <span className="level">
-                <span className="swatch" style={{ background: levelColor(route.max_level) }} />
-                {levelLabel(route.max_level)}
-              </span>
+              <RiskBadge level={route.max_level} />
             ))}
           </tr>
           <tr>
-            <th scope="row">Risk by mile</th>
+            <th scope="row" title="Each route from start (left) to finish (right)">
+              Risk by mile
+            </th>
             {cells((route) => (
-              <RiskBar route={route} />
+              <RiskStrip route={route} />
             ))}
           </tr>
         </tbody>

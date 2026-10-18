@@ -29,6 +29,27 @@ class ForecastSamplingTests(SimpleTestCase):
         c = self.forecast.at(DEPARTURE + timedelta(hours=2))
         self.assertEqual((c.wind_mph, c.rain_in_hr), (20, 0.2))
 
+    def test_gust_uses_containing_hour(self):
+        # Gusts, like rain, cover the hour before each timestamp: 01:20 is in 01:00–02:00.
+        c = self.forecast.at(DEPARTURE + timedelta(hours=1, minutes=20))
+        self.assertEqual(c.gust_mph, 25)
+
+    def test_gust_is_never_below_the_sustained_wind(self):
+        forecast = weather.Forecast(
+            start=DEPARTURE,
+            wind_mph=[30.0],
+            gust_mph=[27.5],
+            wind_from_deg=[0],
+            rain_in=[0.0],
+            snow_in=[0.0],
+            temp_f=[50],
+        )
+        self.assertEqual(forecast.at_hour(0).gust_mph, 30.0)
+
+    def test_missing_gust_stays_missing(self):
+        raw = {"hourly": {"wind_speed_10m": [12], "rain": [0], "showers": [0], "snowfall": [0]}}
+        self.assertIsNone(weather._parse(raw, DEPARTURE, hours=1).at_hour(0).gust_mph)
+
     def test_beyond_window_is_none(self):
         self.assertIsNone(self.forecast.at(DEPARTURE + timedelta(hours=10)))
 

@@ -13,7 +13,7 @@ Enter an origin, destination, departure time and load weight. The app finds **3 
 1. **Plan a trip.** Enter the origin and destination (pick from the suggestions), the departure time (in your own time zone, which the form shows; pick a preset like **Now** or **Tomorrow 6 AM**, a day and a time, or just type one such as `7:30 pm`. The calendar pages through every future month, but only days the weather forecast reaches, about 16 days ahead, can be picked; later days stay greyed out until the forecast covers them), the load weight, and how often to check the weather: every 10, 25 or 50 miles. Required rest stops are included unless you untick them. Or click a sample trip.
 2. **Read the answer.** The form folds into a one-line trip summary (*Edit trip* brings it back). Below it, the **recommended route** card gives the route, its door-to-door time, the reason in one sentence, and its distance, arrival time and Severe / High miles.
 3. **See why.** *How the routes compare* puts the three routes side by side. The rows are the ranking rules in the brief's order; the best value in each row is bold, and the rule that decided is marked on the left. Under that: distance, arrival, stops, the worst weather on the route, and its miles by risk level.
-4. **Check the road.** The map shows all three routes coloured by risk, every checkpoint with its arrival time (hover for the weather there), and the selected route's checkpoint table. Click a route in the table or on the map to select it.
+4. **Check the road.** The map shows all three routes coloured by risk, every checkpoint with its arrival time (hover for the weather there), and the selected route's checkpoint table. High-risk stretches and worse are drawn heavier, with a glow, and the legend gives the selected route's miles at each level. Risk badges carry a five-step meter, so the level reads from the bars as well as the colour; Severe and No Travel are solid. The recommendation card and the comparison table draw each route's risk along its length, start to finish. Click a route in the table or on the map to select it.
 5. **Look ahead.** The heatmap shows risk, wind, rain or snow along the corridor for each hour from departure to +48 h. The 🚚 marker shows where the truck would be at that hour; the blue mark on the slider is the arrival time.
 
 **Day and night mode.** The sun / moon button in the header switches between a light day theme and a dark night theme, which is easier on the eyes in a cab at night. On a first visit the site follows the device's light or dark setting; once you pick one, the browser remembers it. At night the street map is darkened too (terrain and satellite stay as they are), and the risk colours don't change.
@@ -87,7 +87,7 @@ Django REST API ── route_options ── openrouteservice (truck roads) + OSR
 ### Weather (`services/weather.py`)
 - Open-Meteo hourly forecast at each checkpoint (snapped to a ~5 km grid and fetched in parallel batches).
 - **Wind** uses the hour nearest the ETA. **Rain** (`rain + showers`) and **snow** (`snowfall`) are totals for the preceding hour, so the hour containing the ETA is used; those totals are in/hr.
-- Wind risk uses the **sustained** wind speed; gusts are shown but don't set the level.
+- Wind risk uses the **sustained** wind speed, as the spec's table does; gusts are shown but don't set the level. Open-Meteo reports gusts as the strongest of the hour *before* each timestamp, so, like rain and snow, they're read from the hour containing the ETA, and a gust is never shown below the sustained wind (the two come from different moments, so the raw gust can dip under it). The table only shows a gust when it's stronger than the wind as displayed.
 
 ### Risk rules (`risk.py`)
 
@@ -107,16 +107,16 @@ Routes are ranked in the spec's order: **fewest Severe miles → fewest High mil
 ### Heatmap (`heatmap.py`, `map/heatmapFrames.ts`)
 - The server builds a forecast grid around the routes (60 km buffer, ~160 locations) and returns **49 hourly frames** (0–48 h from departure) for four layers: load-aware **Risk**, **Wind**, **Rain**, **Snow**.
 - **Routes first.** The heatmap needs about twice as many forecast locations as the checkpoints, so the browser asks for it in a second request (`/api/heatmap`, with the corridor the plan returned) and shows the routes while it loads. When the free weather API is busy, the routes still appear quickly.
-- The browser blends wind, rain and snow between grid points and classifies each pixel with the same rules. Band edges are smooth, every colour is a real risk level, and at grid points it matches the server exactly.
-- Frames are drawn in the background, so the slider and the play button run without delay. A 🚚 marker shows where the truck would be at that hour (it stays put during required breaks and rests), and a line under the slider says whether it's driving, stopped or has arrived. The slider covers the 0–48 h **forecast**, which usually outlasts the trip, so after arrival the truck waits at the destination while the weather plays on. The selected route's **ETA is marked on the slider**; clicking it jumps to the first whole hour after arrival (an ETA of +10.1 h goes to +11 h, where the truck has actually arrived). If the truck arrives after +48 h, the line under the slider says so instead. Hovering shows the conditions under the cursor.
+- The browser blends wind, rain and snow between grid points and classifies each pixel with the same rules. Band edges are smooth, every colour is a real risk level, and at grid points it matches the server exactly. Low is only a light wash, so the map stays readable and real risk stands out, and the corridor fades out along a smoothed outline rather than the grid's square cells.
+- Frames are drawn in the background, so the slider and the play button run without delay. A 🚚 marker shows where the truck would be at that hour (it stays put during required breaks and rests), and a line under the slider says whether it's driving, stopped or has arrived. The slider covers the 0–48 h **forecast**, which usually outlasts the trip, so after arrival the truck waits at the destination while the weather plays on. The selected route's **ETA is marked on the slider**; clicking it jumps to the first whole hour after arrival (an ETA of +10.1 h goes to +11 h, where the truck has actually arrived). If the truck arrives after +48 h, the line under the slider says so instead. Hovering the map shows the wind, rain and snow under the cursor for that hour, each marked in its own level's colour, with the overall risk for the load. It says plainly when the cursor is outside the forecast corridor (weather is only fetched along the routes) and when a spot in the corridor has no forecast for that hour (past the end of the forecast); "outside" is exactly where the heatmap draws no colour, so the readout and the map always agree.
 
 ## Checks
 
 | | Command |
 |---|---|
-| Backend tests (129) | `cd backend && python manage.py test routing` |
+| Backend tests (132) | `cd backend && python manage.py test routing` |
 | Backend lint / format | `cd backend && pip install -r requirements-dev.txt && ruff check . && ruff format --check .` |
-| Frontend tests (63, incl. React components) | `cd frontend && npm test` |
+| Frontend tests (75, incl. React components) | `cd frontend && npm test` |
 | Frontend lint / format / types | `npm run lint && npx prettier --check src && npm run typecheck` |
 
 GitHub Actions runs all of these on every push, then builds and starts the Docker image and checks that it answers.

@@ -1,4 +1,4 @@
-import type { RiskLevel, RiskMiles, Rules, Thresholds } from "./types";
+import type { Checkpoint, RiskLevel, RiskMiles, Rules, Thresholds } from "./types";
 
 export const LEVELS: { label: string; color: string; key: keyof RiskMiles }[] = [
   { label: "Low", color: "#2f9e5a", key: "low" },
@@ -46,4 +46,27 @@ export function bandRange(level: RiskLevel, t: Thresholds): string {
 export function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export interface RiskStretch {
+  from: number; // miles
+  to: number;
+  level: RiskLevel | null;
+}
+
+// The route as a run of stretches, mile by mile. Like the server's risk miles,
+// each checkpoint stands for the road halfway to its neighbours; neighbouring
+// stretches at the same level are merged.
+export function riskStretches(checkpoints: Checkpoint[], distanceMiles: number): RiskStretch[] {
+  const cps = [...checkpoints].sort((a, b) => a.mile - b.mile);
+  const stretches: RiskStretch[] = [];
+  cps.forEach((cp, i) => {
+    const from = i === 0 ? 0 : (cps[i - 1].mile + cp.mile) / 2;
+    const to = i === cps.length - 1 ? Math.max(distanceMiles, cp.mile) : (cp.mile + cps[i + 1].mile) / 2;
+    if (to <= from) return;
+    const last = stretches[stretches.length - 1];
+    if (last && last.level === cp.level) last.to = to;
+    else stretches.push({ from, to, level: cp.level });
+  });
+  return stretches;
 }
